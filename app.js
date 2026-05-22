@@ -43,12 +43,16 @@ Object.keys(physicsData).forEach(key => {
                 setAnimation(f.animType);
             };
             container.appendChild(card);
-            if(idx === 0) card.click(); // 最初を自動選択
+            if(idx === 0) card.click(); // 各単元の最初を自動選択
         });
         if (window.MathJax) MathJax.typesetPromise();
     };
     chapUl.appendChild(li);
 });
+
+// 起動時に一番最初の単元を自動で開く
+const firstChapter = document.querySelector('.chapter-list .item');
+if (firstChapter) firstChapter.click();
 
 // --- 2D Canvas シミュレーションエンジン ---
 const canvas = document.getElementById('sim-canvas');
@@ -114,7 +118,7 @@ canvas.addEventListener('wheel', (e) => {
     let zoomAmount = e.deltaY > 0 ? -0.1 : 0.1;
     scale = Math.max(0.5, Math.min(3.0, scale + zoomAmount));
     zoomSlider.value = scale; zoomVal.innerText = scale.toFixed(1) + "x";
-});
+}, { passive: false });
 
 // --- 描画補助関数群 ---
 function drawArrow(ctx, x1, y1, x2, y2, color, label="", dashed=false) {
@@ -132,7 +136,7 @@ function drawArrow(ctx, x1, y1, x2, y2, color, label="", dashed=false) {
     }
     if(label) { 
         ctx.font="bold 16px Arial"; 
-        ctx.shadowColor = "white"; ctx.shadowBlur = 4; // 文字を見やすく
+        ctx.shadowColor = "white"; ctx.shadowBlur = 4;
         ctx.fillText(label, x2+5, y2+5); 
         ctx.shadowBlur = 0;
     }
@@ -182,7 +186,7 @@ function render() {
         ctx.beginPath(); ctx.moveTo(-1000,i); ctx.lineTo(1000,i); ctx.stroke();
     }
 
-    let t = time % 5; // 基本ループ時間
+    let t = time % 5;
     
     // --- カテゴリごとの2D描画ロジック ---
     if(animType === "linear" || animType === "accel" || animType.includes("equation") || animType==="power" || animType==="momentum" || animType==="impulse") {
@@ -197,18 +201,15 @@ function render() {
         if(animType.includes("equation") || animType==="power" || animType==="impulse") drawArrow(ctx, x-60, 20, x-20, 20, '#e74c3c', 'F');
     }
     else if(animType === "work_cos") {
-        // ★三角関数の分解 (F cosθ)
+        // ★エラー箇所修正済み
         ctx.fillStyle = '#bdc3c7'; ctx.fillRect(-200, 40, 400, 5);
         let x = -100 + (t*40); if(x>100) time=0;
         drawBlock(ctx, x, 20, 40, 40, '#3498db');
-        // 力のベクトル (斜め)
-        let F = 80; let angle = -Math.PI/6; (-30度)
+        let F = 80; let angle = -Math.PI/6; // (-30度)
         let Fx = F * Math.cos(angle); let Fy = F * Math.sin(angle);
         drawArrow(ctx, x, 0, x+F*Math.cos(angle), Math.sin(angle)*F, '#7f8c8d', 'F (引く力)');
-        // 分解 (cos と sin)
         drawArrow(ctx, x, 0, x+Fx, 0, '#e74c3c', 'F cosθ (仕事する)');
         drawArrow(ctx, x+Fx, 0, x+Fx, Fy, '#2980b9', 'F sinθ', true);
-        // 角度マーク
         ctx.beginPath(); ctx.arc(x, 0, 30, angle, 0); ctx.strokeStyle='black'; ctx.stroke();
         ctx.fillText("θ", x+35, -5);
     }
@@ -234,10 +235,10 @@ function render() {
     }
     else if(animType==="spring" || animType==="harmonic_f") {
         let x = Math.sin(time*3)*80;
-        ctx.fillStyle = '#bdc3c7'; ctx.fillRect(-150, -40, 10, 80); // 壁
+        ctx.fillStyle = '#bdc3c7'; ctx.fillRect(-150, -40, 10, 80); 
         drawSpring(ctx, -140, 0, x-20, 0, 10);
         drawBlock(ctx, x, 0, 40, 40, '#2ecc71');
-        drawArrow(ctx, x, -30, x - x*0.5, -30, '#e74c3c', 'F = -kx'); // 復元力
+        drawArrow(ctx, x, -30, x - x*0.5, -30, '#e74c3c', 'F = -kx'); 
     }
     else if(animType==="moment" || animType==="balance" || animType==="center_mass") {
         let angle = animType==="moment" ? Math.sin(time)*0.2 : 0;
@@ -253,14 +254,13 @@ function render() {
         let px = 120*Math.sin(angle), py = -80 + 120*Math.cos(angle);
         ctx.beginPath(); ctx.moveTo(0, -80); ctx.lineTo(px, py); ctx.strokeStyle='#333'; ctx.stroke();
         drawCircle(ctx, px, py, 20, '#9b59b6');
-        // グラフ
         let K = (0.8 - Math.abs(angle))*100; let U = Math.abs(angle)*100;
         ctx.fillStyle='#2ecc71'; ctx.fillRect(-100, 100-K, 20, K); ctx.fillText("K", -100, 120);
         ctx.fillStyle='#e67e22'; ctx.fillRect(-60, 100-U, 20, U); ctx.fillText("U", -60, 120);
     }
     else if(animType.includes("circular") || animType==="centrifugal") {
         let r = 80;
-        drawCircle(ctx, 0, 0, r, '#bdc3c7', false); // 軌道
+        drawCircle(ctx, 0, 0, r, '#bdc3c7', false); 
         drawCircle(ctx, 0, 0, 5, '#f1c40f');
         let bx = r*Math.cos(time*2), by = r*Math.sin(time*2);
         drawCircle(ctx, bx, by, 15, '#3498db');
@@ -271,24 +271,16 @@ function render() {
         }
     }
     else if(animType.includes("harmonic_sin")) {
-        // ★三角関数の分解 (A sin(ωt))
         let R = 60; let omega = 2; let angle = time * omega;
         let px = -100 + R*Math.cos(angle), py = R*Math.sin(angle);
-        
-        drawCircle(ctx, -100, 0, R, '#bdc3c7', false); // 参照円
-        drawArrow(ctx, -100, 0, px, py, '#7f8c8d', 'A'); // 半径
-        drawArrow(ctx, px, 0, px, py, '#e74c3c', 'A sin(ωt)', true); // sin成分
-        drawArrow(ctx, -100, 0, px, 0, '#2980b9', 'A cos(ωt)', true); // cos成分
-        
-        // 角度マーク
+        drawCircle(ctx, -100, 0, R, '#bdc3c7', false); 
+        drawArrow(ctx, -100, 0, px, py, '#7f8c8d', 'A'); 
+        drawArrow(ctx, px, 0, px, py, '#e74c3c', 'A sin(ωt)', true); 
+        drawArrow(ctx, -100, 0, px, 0, '#2980b9', 'A cos(ωt)', true); 
         ctx.beginPath(); ctx.arc(-100, 0, 20, 0, angle, angle<0); ctx.strokeStyle='black'; ctx.stroke();
         ctx.fillText("ωt", -80, 20);
-
-        // プロットされる単振動
         drawCircle(ctx, 50, py, 15, '#2ecc71');
         ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(50, py); ctx.strokeStyle='#e74c3c'; ctx.setLineDash([5,5]); ctx.stroke(); ctx.setLineDash([]);
-        
-        // 波の軌跡
         ctx.beginPath(); ctx.strokeStyle='rgba(46, 204, 113, 0.5)'; ctx.lineWidth=2;
         for(let i=0; i<150; i++) ctx.lineTo(50 + i, R*Math.sin(angle - i*0.05));
         ctx.stroke();
@@ -330,21 +322,14 @@ function render() {
         drawCircle(ctx, 0, Math.sin(0 - time*3)*40, 8, '#e74c3c');
     }
     else if(animType==="refract_sin") {
-        // ★ スネルの法則 (sin) の可視化
-        ctx.fillStyle='rgba(52,152,219,0.2)'; ctx.fillRect(-200, 0, 400, 200); // 媒質2
-        drawArrow(ctx, 0, -150, 0, 150, '#7f8c8d', '', true); // 法線
-        ctx.fillRect(-200, 0, 400, 2); // 境界
-        
-        let angleI = Math.PI/4; // 入射角
-        let angleR = Math.PI/8; // 屈折角
-        
+        ctx.fillStyle='rgba(52,152,219,0.2)'; ctx.fillRect(-200, 0, 400, 200); 
+        drawArrow(ctx, 0, -150, 0, 150, '#7f8c8d', '', true); 
+        ctx.fillRect(-200, 0, 400, 2); 
+        let angleI = Math.PI/4; let angleR = Math.PI/8; 
         let xI = -100*Math.sin(angleI), yI = -100*Math.cos(angleI);
         let xR = 100*Math.sin(angleR), yR = 100*Math.cos(angleR);
-        
         drawArrow(ctx, xI, yI, 0, 0, '#f1c40f', '入射');
         drawArrow(ctx, 0, 0, xR, yR, '#f1c40f', '屈折');
-        
-        // sin 成分の描画
         drawArrow(ctx, xI, yI, 0, yI, '#e74c3c', 'sin i', true);
         drawArrow(ctx, xR, yR, 0, yR, '#2980b9', 'sin r', true);
     }
@@ -359,53 +344,41 @@ function render() {
         }
     }
     else if(animType==="lorentz_sin") {
-        // ★ ローレンツ力の sin 分解
         ctx.fillStyle='#2ecc71'; ctx.fillText("B (奥へ)", -50, -50);
         for(let i=-60; i<=60; i+=30) { ctx.fillText("x", i, 0); }
-        
         let v = 60; let angle = -Math.PI/6;
         let vx = v*Math.cos(angle), vy = v*Math.sin(angle);
-        
         drawCircle(ctx, 0, 0, 10, '#f1c40f');
         drawArrow(ctx, 0, 0, vx, vy, '#3498db', 'v (速度)');
         drawArrow(ctx, 0, 0, 0, vy, '#e74c3c', 'v sinθ (力を受ける)', true);
         drawArrow(ctx, 0, 0, vx, 0, '#7f8c8d', 'v cosθ (力0)', true);
-        
-        // 発生する力
         drawArrow(ctx, 0, 0, -vy, 0, '#e67e22', 'F (ローレンツ力)');
     }
     else if(animType==="flux_cos") {
-        // ★ 磁束の cos 分解
         ctx.strokeStyle='#34495e'; ctx.lineWidth=2;
-        ctx.beginPath(); ctx.ellipse(0, 0, 60, 20, 0, 0, Math.PI*2); ctx.stroke(); // コイル面
+        ctx.beginPath(); ctx.ellipse(0, 0, 60, 20, 0, 0, Math.PI*2); ctx.stroke();
         drawArrow(ctx, 0, 0, 0, -60, '#7f8c8d', '法線(垂直)', true);
-        
         let B = 80; let angle = -Math.PI/6;
         let Bx = B*Math.sin(angle), By = -B*Math.cos(angle);
-        
         drawArrow(ctx, 0, 0, Bx, By, '#2ecc71', 'B (磁場)');
         drawArrow(ctx, Bx, By, 0, By, '#e74c3c', 'B cosθ (貫く)', true);
     }
     else if(animType==="ac_gen") {
-        // ★ 交流の sin 波発生
         let angle = time*2;
-        drawCircle(ctx, -100, 0, 40, '#bdc3c7', false); // 回転
+        drawCircle(ctx, -100, 0, 40, '#bdc3c7', false);
         drawArrow(ctx, -100, 0, -100+40*Math.cos(angle), 40*Math.sin(angle), '#3498db', 'コイル');
-        
-        // 縦成分を取り出す
         drawArrow(ctx, -100+40*Math.cos(angle), 0, -100+40*Math.cos(angle), 40*Math.sin(angle), '#e74c3c', 'V0 sin(ωt)', true);
-        
         drawCircle(ctx, 0, 40*Math.sin(angle), 8, '#e74c3c');
         ctx.beginPath(); ctx.strokeStyle='#e74c3c'; ctx.lineWidth=2;
         for(let i=0; i<150; i++) ctx.lineTo(i, 40*Math.sin(angle - i*0.05));
         ctx.stroke();
     }
-    // (※その他の簡易表現アニメーションも網羅的に描画)
     else {
-        // 上記以外のシンプルなものは回転や波で汎用描画
-        ctx.fillStyle='#bdc3c7'; ctx.font="20px Arial"; ctx.fillText("シミュレーション実行中...", -100, 0);
+        ctx.fillStyle='#bdc3c7'; ctx.font="20px Arial"; ctx.fillText("シミュレーションを選択してください", -150, 0);
         drawCircle(ctx, Math.cos(time*2)*40, Math.sin(time*2)*40, 10, '#3498db');
     }
 
     ctx.restore();
 }
+
+render();
