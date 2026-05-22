@@ -3,62 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>高校物理 3D公式完全マスター 決定版</title>
+    <title>高校物理 3D公式完全マスター [全公式網羅版]</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
     <header>
         <h1>高校物理 3D公式完全マスター</h1>
-        <p>全分野・全公式 完全網羅版</p>
+        <p>全範囲・全公式 完全収録</p>
     </header>
 
     <div class="app-container">
         <nav class="sidebar">
-            <ul id="menu-list">
-                <li class="chapter">力学</li>
-                <li class="item" data-id="c1">1 運動の表し方・落下</li>
-                <li class="item" data-id="c2">2 色々な力・運動方程式</li>
-                <li class="item" data-id="c3">3 剛体のつりあい</li>
-                <li class="item" data-id="c4">4 仕事と力学的エネルギー</li>
-                <li class="item" data-id="c5">5 運動量と力積</li>
-                <li class="item" data-id="c6">6 円運動と慣性力</li>
-                <li class="item" data-id="c7">7 単振動</li>
-                <li class="item" data-id="c8">8 万有引力</li>
-                <li class="chapter">熱力学</li>
-                <li class="item" data-id="c9">9 熱と温度・状態変化</li>
-                <li class="item" data-id="c10">10 気体の法則と内部エネルギー</li>
-                <li class="chapter">波動</li>
-                <li class="item" data-id="c11">11 波の性質</li>
-                <li class="item" data-id="c12">12 音波とドップラー効果</li>
-                <li class="item" data-id="c13">13 光波とレンズ・干渉</li>
-                <li class="chapter">電磁気</li>
-                <li class="item" data-id="c14">14 電場と電位</li>
-                <li class="item" data-id="c15">15 コンデンサー</li>
-                <li class="item" data-id="c16">16 電流と直流回路</li>
-                <li class="item" data-id="c17">17 磁場とローレンツ力</li>
-                <li class="item" data-id="c18">18 電磁誘導</li>
-                <li class="item" data-id="c19">19 交流回路と電磁波</li>
-                <li class="chapter">原子</li>
-                <li class="item" data-id="c20">20 粒子性と波動性（光電効果）</li>
-                <li class="item" data-id="c21">21 原子の構造（ボーア模型）</li>
-                <li class="item" data-id="c22">22 原子核と放射線</li>
-            </ul>
+            <ul id="menu-list"></ul>
         </nav>
 
         <main class="simulation-panel">
-            <div id="canvas-container"></div>
-            <div class="controls">
-                <button id="playBtn">再生 / 一時停止</button>
-                <button id="resetBtn">リセット</button>
+            <div id="canvas-container">
+                <div class="camera-hint">👆ドラッグ:回転 / 🛞ホイール:拡大縮小</div>
             </div>
-            <div id="sim-desc" class="sim-description"></div>
+            <div class="controls">
+                <button id="playBtn">⏸ 一時停止</button>
+                <button id="resetBtn">🔄 リセット</button>
+            </div>
+            <div id="sim-desc" class="sim-description">左から単元を選び、右の公式をクリックしてください。</div>
         </main>
 
         <aside class="info-panel">
             <h2 id="unit-title">単元を選択してください</h2>
+            <p style="color:#e74c3c; font-weight:bold; margin-bottom:1rem;">👇 公式カードをクリックすると対応する3Dが動きます</p>
             <div id="formula-cards-container"></div>
         </aside>
     </div>
