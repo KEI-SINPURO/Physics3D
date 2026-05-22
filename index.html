@@ -2,42 +2,171 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>高校物理 2Dシミュレーション＆公式完全マスター</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <title>三角関数シミュレーター（修正・完全版）</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f0f2f5; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 6px; }
+        .control-group { display: flex; flex-direction: column; }
+        label { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+        canvas { background: #1a1a1a; border-radius: 6px; display: block; margin-top: 10px; }
+        .math-info { background: #eec; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 13px; margin-bottom: 15px; }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>高校物理 公式完全マスター</h1>
-        <p>教科書の図解がそのまま動く！高精度2Dシミュレーション</p>
-    </header>
 
-    <div class="app-container">
-        <nav class="sidebar">
-            <div id="menu-list"></div>
-        </nav>
-
-        <main class="simulation-panel">
-            <div id="canvas-container">
-                <canvas id="sim-canvas"></canvas>
-            </div>
-            <div class="controls">
-                <button id="playBtn">⏸ 一時停止</button>
-                <button id="resetBtn">🔄 リセット</button>
-            </div>
-            <div id="sim-desc" class="sim-description">左から単元を選び、右の公式をクリックしてください。</div>
-        </main>
-
-        <aside class="info-panel">
-            <h2 id="unit-title">単元を選択してください</h2>
-            <p style="color:#e74c3c; font-weight:bold; margin-bottom:1rem;">👇 公式カードをクリックすると対応する図解が動きます</p>
-            <div id="formula-cards-container"></div>
-        </aside>
+<div class="container">
+    <h2>三角関数（sin, cos, tan）弾道シミュレーター</h2>
+    
+    <div class="math-info" id="mathInfo">
+        計算中...
     </div>
 
-    <script src="data.js"></script>
-    <script src="app.js"></script>
+    <div class="controls">
+        <div class="control-group">
+            <label>① 画面サイズ（幅）: <span id="size-val">600</span>px</label>
+            <input type="range" id="size-slider" min="400" max="850" value="600" step="50">
+        </div>
+        <div class="control-group">
+            <label>② 再生速度: <span id="speed-val">1.00</span>倍速</label>
+            <input type="range" id="speed-slider" min="0.25" max="1.00" value="1.00" step="0.25">
+        </div>
+        <div class="control-group">
+            <label>③ 発射角度 (θ): <span id="angle-val">45</span>°</label>
+            <input type="range" id="angle-slider" min="0" max="85" value="45">
+        </div>
+        <div class="control-group">
+            <label>④ 初速度 (v): <span id="vel-val">10</span></label>
+            <input type="range" id="vel-slider" min="5" max="15" value="10" step="0.5">
+        </div>
+    </div>
+
+    <button id="reset-btn" style="padding: 10px 20px; font-weight: bold; cursor: pointer;">再発射</button>
+
+    <canvas id="simCanvas" width="600" height="400"></canvas>
+</div>
+
+<script>
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+
+// UI要素の取得
+const sizeSlider = document.getElementById('size-slider');
+const speedSlider = document.getElementById('speed-slider');
+const angleSlider = document.getElementById('angle-slider');
+const velSlider = document.getElementById('vel-slider');
+const resetBtn = document.getElementById('reset-btn');
+
+// ラベル表示用
+const sizeVal = document.getElementById('size-val');
+const speedVal = document.getElementById('speed-val');
+const angleVal = document.getElementById('angle-val');
+const velVal = document.getElementById('vel-val');
+const mathInfo = document.getElementById('mathInfo');
+
+// 物理パラメータの初期状態
+let ball = { x: 50, y: 350, vx: 0, vy: 0, radius: 8 };
+let gravity = 0.15; // 重力
+let isFlying = true;
+
+// 初期化と計算関数
+function initSimulation() {
+    const angleDegree = parseFloat(angleSlider.value);
+    const v = parseFloat(velSlider.value);
+    
+    // 【修正ポイント1】度数法からラジアンへの正しい変換
+    const rad = angleDegree * Math.PI / 180;
+    
+    // 【修正ポイント2】sin, cos を使って速度ベクトルを分解
+    // Canvasは下方向がプラスなので、上に向かって飛ばすために vy はマイナスにする
+    ball.x = 50;
+    ball.y = canvas.height - 50;
+    ball.vx = v * Math.cos(rad);
+    ball.vy = -v * Math.sin(rad); 
+    
+    isFlying = true;
+
+    // 【修正ポイント3】tanの活用（発射時の傾き・補助線の計算に使用）
+    // tan(θ) = 垂直 / 水平。 90度に近づくと無限になるので計算を分ける
+    let tanValue = angleDegree === 90 ? "無限大" : Math.tan(rad).toFixed(4);
+
+    // リアルタイムの計算式を画面に表示
+    mathInfo.innerHTML = `
+        <strong>【三角関数の活用ログ】</strong><br>
+        ・角度 θ = ${angleDegree}° (${rad.toFixed(4)} rad)<br>
+        ・水平速度 (v * cos(θ)) = ${v} * ${Math.cos(rad).toFixed(4)} = <b>${ball.vx.toFixed(2)}</b> (右方向への推進力)<br>
+        • 垂直速度 (v * sin(θ)) = ${v} * ${Math.sin(rad).toFixed(4)} = <b>${Math.abs(ball.vy).toFixed(2)}</b> (上方向への推進力)<br>
+        ・初期の軌道の傾き (tan(θ)) = <b>${tanValue}</b> (この傾きに沿って飛び出します)
+    `;
+}
+
+// ループ処理（描画と更新）
+function update() {
+    // 画面クリア
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // 地面の描画
+    ctx.strokeStyle = '#27ae60';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height - 42);
+    ctx.lineTo(canvas.width, canvas.height - 42);
+    ctx.stroke();
+
+    // スピード倍率の取得 (0.25 〜 1.00)
+    const timeScale = parseFloat(speedSlider.value);
+
+    if (isFlying) {
+        // 速度倍率（timeScale）を掛けて移動させることで、スローモーションを実現
+        ball.x += ball.vx * timeScale;
+        ball.vy += gravity * timeScale; // 重力で徐々に下に落とす
+        ball.y += ball.vy * timeScale;
+
+        // 地面か画面外に着地したらストップ
+        if (ball.y >= canvas.height - 50) {
+            ball.y = canvas.height - 50;
+            isFlying = false;
+        }
+    }
+
+    // ボールの描画
+    ctx.fillStyle = '#f1c40f';
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    requestAnimationFrame(update);
+}
+
+// イベントリスナー（動的なサイズ・速度変更）
+sizeSlider.addEventListener('input', () => {
+    const width = parseInt(sizeSlider.value);
+    canvas.width = width;
+    canvas.height = width * 0.66; // 黄金比に近い比率を維持して高さも可変に
+    sizeVal.textContent = width;
+    initSimulation();
+});
+
+speedSlider.addEventListener('input', () => {
+    speedVal.textContent = parseFloat(speedSlider.value).toFixed(2);
+});
+
+angleSlider.addEventListener('input', () => {
+    angleVal.textContent = angleSlider.value;
+    initSimulation();
+});
+
+velSlider.addEventListener('input', () => {
+    velVal.textContent = velSlider.value;
+    initSimulation();
+});
+
+resetBtn.addEventListener('click', initSimulation);
+
+// 初回起動
+initSimulation();
+update();
+</script>
+
 </body>
 </html>
