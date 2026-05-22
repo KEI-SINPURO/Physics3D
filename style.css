@@ -16,9 +16,18 @@ header p { font-size: 0.9rem; color: #d2dae2; }
 .chapter-list .item.active { background: #0984e3; color: white; font-weight: bold; border-left: 4px solid #f39c12; }
 
 /* シミュレーションパネル (2D Canvas) */
-.simulation-panel { flex: 1.2; background: #fdfdfd; display: flex; flex-direction: column; border-right: 1px solid #ddd; }
-#canvas-container { flex: 1; width: 100%; position: relative; background: #fafbfc; display: flex; justify-content: center; align-items: center; }
-#sim-canvas { width: 100%; height: 100%; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
+.simulation-panel { flex: 1.2; background: #fdfdfd; display: flex; flex-direction: column; border-right: 1px solid #ddd; position: relative; }
+#canvas-container { flex: 1; width: 100%; position: relative; background: #fafbfc; overflow: hidden; }
+#sim-canvas { width: 100%; height: 100%; cursor: grab; }
+#sim-canvas:active { cursor: grabbing; }
+
+/* キャンバス上のUI (ズーム・スピード) */
+.canvas-ui { position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; font-weight: bold; border: 1px solid #ccc; pointer-events: auto; }
+.canvas-ui label { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.canvas-ui input[type="range"] { width: 100px; cursor: pointer; }
+.canvas-ui span { display: inline-block; width: 45px; text-align: right; color: #0984e3; }
+.canvas-ui .hint { font-size: 0.75rem; color: #7f8c8d; text-align: center; margin-top: 4px; font-weight: normal; }
+
 .controls { background: #ecf0f1; padding: 0.8rem; display: flex; justify-content: center; gap: 1rem; border-top: 1px solid #bdc3c7; border-bottom: 1px solid #bdc3c7; }
 button { padding: 0.6rem 1.5rem; background: #2980b9; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 button:hover { background: #3498db; transform: translateY(-1px); }
