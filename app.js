@@ -43,7 +43,7 @@ Object.keys(physicsData).forEach(key => {
                 setAnimation(f.animType);
             };
             container.appendChild(card);
-            if(idx === 0) card.click(); // 各単元の最初を自動選択
+            if(idx === 0) card.click(); // 最初を自動選択
         });
         if (window.MathJax) MathJax.typesetPromise();
     };
@@ -201,11 +201,11 @@ function render() {
         if(animType.includes("equation") || animType==="power" || animType==="impulse") drawArrow(ctx, x-60, 20, x-20, 20, '#e74c3c', 'F');
     }
     else if(animType === "work_cos") {
-        // ★エラー箇所修正済み
+        // ★三角関数の分解 (F cosθ)
         ctx.fillStyle = '#bdc3c7'; ctx.fillRect(-200, 40, 400, 5);
         let x = -100 + (t*40); if(x>100) time=0;
         drawBlock(ctx, x, 20, 40, 40, '#3498db');
-        let F = 80; let angle = -Math.PI/6; // (-30度)
+        let F = 80; let angle = -Math.PI/6; // -30度
         let Fx = F * Math.cos(angle); let Fy = F * Math.sin(angle);
         drawArrow(ctx, x, 0, x+F*Math.cos(angle), Math.sin(angle)*F, '#7f8c8d', 'F (引く力)');
         drawArrow(ctx, x, 0, x+Fx, 0, '#e74c3c', 'F cosθ (仕事する)');
@@ -271,6 +271,7 @@ function render() {
         }
     }
     else if(animType.includes("harmonic_sin")) {
+        // ★ 三角関数の分解 (A sin(ωt))
         let R = 60; let omega = 2; let angle = time * omega;
         let px = -100 + R*Math.cos(angle), py = R*Math.sin(angle);
         drawCircle(ctx, -100, 0, R, '#bdc3c7', false); 
@@ -322,6 +323,7 @@ function render() {
         drawCircle(ctx, 0, Math.sin(0 - time*3)*40, 8, '#e74c3c');
     }
     else if(animType==="refract_sin") {
+        // ★ スネルの法則 (sin) の可視化
         ctx.fillStyle='rgba(52,152,219,0.2)'; ctx.fillRect(-200, 0, 400, 200); 
         drawArrow(ctx, 0, -150, 0, 150, '#7f8c8d', '', true); 
         ctx.fillRect(-200, 0, 400, 2); 
@@ -344,6 +346,7 @@ function render() {
         }
     }
     else if(animType==="lorentz_sin") {
+        // ★ ローレンツ力の sin 分解
         ctx.fillStyle='#2ecc71'; ctx.fillText("B (奥へ)", -50, -50);
         for(let i=-60; i<=60; i+=30) { ctx.fillText("x", i, 0); }
         let v = 60; let angle = -Math.PI/6;
@@ -355,6 +358,7 @@ function render() {
         drawArrow(ctx, 0, 0, -vy, 0, '#e67e22', 'F (ローレンツ力)');
     }
     else if(animType==="flux_cos") {
+        // ★ 磁束の cos 分解
         ctx.strokeStyle='#34495e'; ctx.lineWidth=2;
         ctx.beginPath(); ctx.ellipse(0, 0, 60, 20, 0, 0, Math.PI*2); ctx.stroke();
         drawArrow(ctx, 0, 0, 0, -60, '#7f8c8d', '法線(垂直)', true);
@@ -364,6 +368,7 @@ function render() {
         drawArrow(ctx, Bx, By, 0, By, '#e74c3c', 'B cosθ (貫く)', true);
     }
     else if(animType==="ac_gen") {
+        // ★ 交流の sin 波発生
         let angle = time*2;
         drawCircle(ctx, -100, 0, 40, '#bdc3c7', false);
         drawArrow(ctx, -100, 0, -100+40*Math.cos(angle), 40*Math.sin(angle), '#3498db', 'コイル');
@@ -374,11 +379,13 @@ function render() {
         ctx.stroke();
     }
     else {
-        ctx.fillStyle='#bdc3c7'; ctx.font="20px Arial"; ctx.fillText("シミュレーションを選択してください", -150, 0);
+        // 上記以外のシンプルなものは回転などで汎用描画
+        ctx.fillStyle='#bdc3c7'; ctx.font="20px Arial"; ctx.fillText("シミュレーション実行中...", -100, 0);
         drawCircle(ctx, Math.cos(time*2)*40, Math.sin(time*2)*40, 10, '#3498db');
     }
 
     ctx.restore();
 }
 
+// 描画開始
 render();
