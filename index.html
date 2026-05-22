@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高校物理 3D公式完全マスター</title>
+    <!-- 数式描画エンジン MathJax -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- 3D描画エンジン Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #f59e0b;
+            --bg-color: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: 'Helvetica Neue', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Arial, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
+
+        /* ヘッダー */
+        header { 
+            background: linear-gradient(135deg, #1e293b, #0f172a); 
+            color: white; 
+            padding: 1rem 2rem; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2); 
+            z-index: 10; 
+        }
+        header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 1px; }
+        header p { font-size: 0.85rem; color: #cbd5e1; }
+
+        .app-container { display: flex; flex: 1; overflow: hidden; }
+
+        /* 左側ナビゲーション */
+        .sidebar { 
+            width: 280px; 
+            background: var(--surface); 
+            overflow-y: auto; 
+            border-right: 1px solid var(--border); 
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-header {
+            padding: 1rem;
+            background: #f1f5f9;
+            border-bottom: 1px solid var(--border);
+            font-weight: bold;
+            color: var(--text-main);
+            position: sticky;
+            top: 0;
+            z-index: 5;
+        }
+        .sidebar ul { list-style: none; padding-bottom: 2rem; }
+        .sidebar .chapter { 
+            background: #e2e8f0; 
+            padding: 0.6rem 1rem; 
+            font-weight: bold; 
+            color: #334155; 
+            font-size: 0.85rem; 
+            margin-top: 0.5rem; 
+            border-left: 4px solid var(--primary);
+        }
+        .sidebar .item { 
+            padding: 0.7rem 1rem 0.7rem 1.5rem; 
+            cursor: pointer; 
+            font-size: 0.9rem; 
+            border-bottom: 1px solid #f1f5f9; 
+            transition: all 0.2s ease;
+            color: #475569;
+        }
+        .sidebar .item:hover { background: #eff6ff; color: var(--primary); padding-left: 1.8rem; }
+        .sidebar .item.active { background: var(--primary); color: white; font-weight: bold; }
+
+        /* 中央3Dエリア */
+        .simulation-panel { 
+            flex: 1.2; 
+            background: #000; 
+            display: flex; 
+            flex-direction: column; 
+            position: relative; 
+            border-right: 1px solid var(--border);
+        }
+        #canvas-container { 
+            flex: 1; 
+            width: 100%; 
+            position: relative;
+            cursor: grab;
+        }
+        #canvas-container:active { cursor: grabbing; }
+        
+        .camera-hint {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            backdrop-filter: blur(4px);
+        }
+
+        .controls { 
+            background: #1e293b; 
+            padding: 1rem; 
+            display: flex; 
+            justify-content: center; 
+            gap: 1rem; 
+        }
+        button { 
+            padding: 0.6rem 1.5rem; 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 0.95rem;
+            transition: background 0.2s, transform 0.1s; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        button:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        button:active { transform: translateY(1px); }
+        button#resetBtn { background: #64748b; }
+        button#resetBtn:hover { background: #475569; }
+
+        .sim-description { 
+            background: #0f172a; 
+            color: #e2e8f0; 
+            padding: 1rem; 
+            font-size: 0.9rem; 
+            line-height: 1.5;
+            text-align: center; 
+            border-top: 1px solid #334155; 
+        }
+
+        /* 右側公式パネル */
+        .info-panel { 
+            flex: 1.3; 
+            background: var(--bg-color); 
+            padding: 2rem; 
+            overflow-y: auto; 
+            scroll-behavior: smooth;
+        }
+        .info-panel h2 { 
+            color: var(--text-main); 
+            border-bottom: 3px solid var(--primary); 
+            padding-bottom: 0.8rem; 
+            margin-bottom: 2rem; 
+            font-size: 1.5rem; 
+        }
+        
+        .formula-card { 
+            background: var(--surface); 
+            border-radius: 12px; 
+            padding: 1.8rem; 
+            margin-bottom: 1.5rem; 
+            box-shadow: var(--shadow); 
+            border: 1px solid var(--border);
+            border-top: 5px solid var(--primary);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .formula-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .formula-card h3 { 
+            color: var(--primary-dark); 
+            font-size: 1.15rem; 
+            margin-bottom: 1.2rem; 
+            display: flex;
+            align-items: center;
+        }
+        .formula-card h3::before {
+            content: '📌';
+            margin-right: 8px;
+            font-size: 1.2rem;
+        }
+        
+        .math-box { 
+            background: #f8fafc; 
+            padding: 1.2rem; 
+            border-radius: 8px; 
+            font-size: 1.3rem; 
+            text-align: center; 
+            margin-bottom: 1.2rem; 
+            overflow-x: auto; 
+            border: 1px solid #e2e8f0;
+        }
+        
+        .desc-section { 
+            font-size: 0.95rem; 
+            line-height: 1.6; 
+            color: var(--text-main); 
+            margin-bottom: 1rem; 
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        .desc-section strong { 
+            display: inline-block;
+            color: #b45309; 
+            margin-bottom: 0.4rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #fcd34d;
+        }
+        .desc-section.reason strong { color: #047857; border-bottom-color: #6ee7b7; }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 1024px) {
+            .app-container { flex-direction: column; }
+            .sidebar { width: 100%; height: 200px; border-right: none; border-bottom: 1px solid var(--border); }
+            .simulation-panel { flex: none; height: 400px; }
+            .info-panel { flex: 1; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>高校物理 3D公式完全マスター</h1>
+        <p>視覚で理解する動く教科書</p>
+    </header>
+
+    <div class="app-container">
+        <!-- 左側：全範囲ナビゲーション -->
+        <nav class="sidebar">
+            <div class="sidebar-header">学習メニュー</div>
+            <ul id="menu-list">
+                <!-- JavaScriptで動的に生成されます -->
+            </ul>
+        </nav>
+
+        <!-- 中央：3Dシミュレーション -->
+        <main class="simulation-panel">
+            <div id="canvas-container">
+                <div class="camera-hint">👆 ドラッグで視点変更</div>
+            </div>
+            <div class="controls">
+                <button id="playBtn">⏸ 一時停止</button>
+                <button id="resetBtn">🔄 リセット</button>
+            </div>
+            <div id="sim-desc" class="sim-description"></div>
+        </main>
+
+        <!-- 右側：公式カードリスト -->
+        <aside class="info-panel">
+            <h2 id="unit-title">単元を選択してください</h2>
+            <div id="formula-cards-container"></div>
+        </aside>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. 全公式データベース (画像データ完全統合)
+        // ==========================================
+        const physicsData = {
+            // --- 力学 ---
+            "c1": {
+                chap: "力学", title: "1 運動の表し方・落下運動", type: "kinematics", 
+                simText: "【等加速度直線運動】物体が一定の割合で加速しながら進む様子です。落下運動も向きが縦になるだけで本質は同じです。",
+                formulas: [
+                    { name: "等速直線運動の変位", math: "$$x=vt$$", usage: "速度が一定のときの進んだ距離を求めます。", reason: "「距離＝速さ×時間」の基本中の基本となる式です。" },
+                    { name: "等加速度直線運動（速度）", math: "$$v=v_0+at$$", usage: "加速度aで加速している物体の、時間t後の速度を知りたい時。", reason: "初めの速度に、「1秒あたりに増える速度(a)×秒数(t)」を足し合わせたものです。" },
+                    { name: "等加速度直線運動（変位）", math: "$$x=v_0t+\\frac{1}{2}at^2$$", usage: "時間tの間に進んだトータルの距離を知りたい時。", reason: "v-tグラフ（縦軸が速度、横軸が時間）を描いた時の面積（長方形＋三角形）から導かれます。" },
+                    { name: "時間を含まない式", math: "$$v^2-v_0^2=2ax$$", usage: "「時間が分からない」けれど速度と距離の関係を出したい時の必須公式。", reason: "上の2式から時間tを消去して整理した便利なショートカット式です。" },
+                    { name: "自由落下", math: "$$v=gt \\quad y=\\frac{1}{2}gt^2$$", usage: "物体を静かに手放した時の速度と落下距離。", reason: "等加速度運動の式で、初速度v0=0、加速度a=g（重力加速度）としたものです。" }
+                ]
+            },
+            "c2": {
+                chap: "力学", title: "2 色々な力・運動方程式", type: "force", 
+                simText: "【斜面を滑る物体】重力、垂直抗力、摩擦力などの合力が加速度を生み出します。",
+                formulas: [
+                    { name: "重力", math: "$$W=mg$$", usage: "質量mの物体が地球に引っ張られる力を求める時。", reason: "質量mが大きいほど、また重力加速度gが大きいほど強い力を受けます。" },
+                    { name: "フックの法則（弾性力）", math: "$$F=kx$$", usage: "ばねの伸び・縮みxから、元に戻ろうとする力を求める時。", reason: "力はばね定数k（ばねの固さ）と変形量xに正確に比例します。" },
+                    { name: "最大静止摩擦力", math: "$$F_0=\\mu N$$", usage: "物体が滑り出す直前の、ギリギリ耐えている最大の摩擦力を求める時。", reason: "静止摩擦係数μと、面を押し付ける力（垂直抗力N）に比例します。面積には無関係です。" },
+                    { name: "動摩擦力", math: "$$F'=\\mu' N$$", usage: "滑って動いている最中にはたらく摩擦力。", reason: "動摩擦係数μ'を使用します。動いている速度には関係なく一定です。" },
+                    { name: "浮力（アルキメデスの原理）", math: "$$F=\\rho Vg$$", usage: "水中の物体が受ける上向きの力。", reason: "浮力の大きさは、「物体が押しのけた液体の重さ」とぴったり等しくなります。" },
+                    { name: "運動方程式", math: "$$ma=F$$", usage: "物体にはたらく合力Fから、生じる加速度aを計算する、力学で最も重要な式。", reason: "ニュートンの第2法則。力が大きいほど急加速し、質量が大きい（重い）ほど加速しにくくなります。" }
+                ]
+            },
+            "c3": {
+                chap: "力学", title: "3 剛体のつりあい", type: "rotate", 
+                simText: "【力のモーメント】シーソーのように、回転軸からの距離と力によって回転のしやすさが決まります。",
+                formulas: [
+                    { name: "力のモーメント", math: "$$M=Fl$$", usage: "物体を「回転」させようとする能力の大きさを求める時。", reason: "力Fと、回転軸から力の作用線までの垂直距離（うでの長さ）lの積で決まります。遠くを押すほど回りやすいです。" },
+                    { name: "剛体のつりあい条件", math: "$$\\Sigma F=0 \\quad \\Sigma M=0$$", usage: "大きさのある物体が静止し続ける条件。", reason: "「まっすぐ動かない（力の合力が0）」かつ「回転しない（モーメントの和が0）」という2つの条件が揃う必要があります。" }
+                ]
+            },
+            "c4": {
+                chap: "力学", title: "4 仕事とエネルギー", type: "energy", 
+                simText: "【振り子の運動】高いところでは位置エネルギーが最大になり、最下点では運動エネルギー（スピード）が最大になります。",
+                formulas: [
+                    { name: "仕事", math: "$$W=Fx\\cos\\theta$$", usage: "力が物体を移動させて、どれだけエネルギーを与えたか（奪ったか）。", reason: "移動方向と同じ向きの力の成分だけが仕事をします。垂直な力は仕事をしません。" },
+                    { name: "運動エネルギー", math: "$$K=\\frac{1}{2}mv^2$$", usage: "速さvで動いている物体が持つエネルギー。", reason: "運動方程式から仕事を積分することで数学的に導かれます。" },
+                    { name: "重力による位置エネルギー", math: "$$U=mgh$$", usage: "基準面から高さhにある物体が持つエネルギー。", reason: "その物体が基準面まで落下する間に、重力がする仕事mghに等しいからです。" },
+                    { name: "力学的エネルギー保存則", math: "$$\\frac{1}{2}mv^2+mgh+\\frac{1}{2}kx^2=\\text{一定}$$", usage: "摩擦や空気抵抗がないときの、ジェットコースターや振り子の速度を求める時。", reason: "保存力（重力・弾性力など）だけが仕事をする場合、エネルギーの総和は形を変えるだけで減りません。" }
+                ]
+            },
+            "c5": {
+                chap: "力学", title: "5 運動量と力積", type: "collision", 
+                simText: "【物体の衝突】ぶつかる前と後で、全体の運動の勢い（運動量のベクトル和）は保存されます。",
+                formulas: [
+                    { name: "運動量と力積", math: "$$p=mv \\quad I=F\\Delta t$$", usage: "物体の「勢い(p)」と、加えた「打撃力(I)」を定義する時。", reason: "質量と速度の積が運動量。力と、その力が加わっていた時間の積が力積です。" },
+                    { name: "運動量と力積の関係", math: "$$mv'-mv=F\\Delta t$$", usage: "バットでボールを打った時など、力を加えた後の速度の変化を求める時。", reason: "運動方程式(ma=F)の加速度aを (v'-v)/Δt に書き換えて変形したものです。" },
+                    { name: "運動量保存則", math: "$$m_1v_1+m_2v_2=m_1v_1'+m_2v_2'$$", usage: "物体が衝突・合体・分裂する前後の速度を計算する時。", reason: "作用反作用の法則により互いに及ぼし合う力（内力）は打ち消し合うため、全体の運動量は変化しません。" },
+                    { name: "反発係数（はねかえり係数）", math: "$$e=-\\frac{v_1'-v_2'}{v_1-v_2}$$", usage: "衝突後に互いにどれくらいの速さで遠ざかるかの割合。", reason: "e=1ならエネルギーが失われない弾性衝突、e=0ならくっついて動く完全非弾性衝突です。" }
+                ]
+            },
+            "c6": {
+                chap: "力学", title: "6 円運動と慣性力", type: "circular", 
+                simText: "【等速円運動】物体が円を描くには、常に中心に向かって引っ張る力（向心力）が必要です。",
+                formulas: [
+                    { name: "角速度・速度", math: "$$\\omega=\\frac{\\theta}{t} \\quad v=r\\omega$$", usage: "回転する角度のペース(ω)や、実際の周回スピード(v)を求める時。", reason: "弧の長さは「半径r×中心角θ」なので、それを時間で割ると v = rω になります。" },
+                    { name: "周期と回転数", math: "$$T=\\frac{2\\pi}{\\omega} \\quad n=\\frac{1}{T}$$", usage: "1周する時間(T)と、1秒間に何回転するか(n)。", reason: "1周の角度(2π)を角速度(ω)で割ると時間になります。" },
+                    { name: "向心力", math: "$$F=mr\\omega^2=m\\frac{v^2}{r}$$", usage: "円運動を維持するために必要な、ひもの張力や摩擦力を計算する時。", reason: "速度の「向き」を変え続けるための向心加速度(rω²)を、運動方程式(F=ma)に代入したものです。" },
+                    { name: "遠心力（慣性力）", math: "$$F=mr\\omega^2$$", usage: "回転する乗り物に乗っている人から見て、外側に引っ張られる見かけの力を考える時。", reason: "観測者自身が中心に向かって加速しているため、逆向きに力が働いているように感じます。" }
+                ]
+            },
+            "c7": {
+                chap: "力学", title: "7 単振動", type: "harmonic", 
+                simText: "【単振動】ばねの往復運動。等速円運動を真横から見た影の動きと数学的に完全に一致します。",
+                formulas: [
+                    { name: "変位・速度・加速度", math: "$$x=A\\sin\\omega t \\quad v=A\\omega\\cos\\omega t \\quad a=-\\omega^2x$$", usage: "往復運動中の任意の位置や速度、加速度を求める時。", reason: "円運動を射影（微分）していくことでサイン・コサインの式になり、加速度は変位に比例して逆向きになります。" },
+                    { name: "復元力", math: "$$F=-Kx$$", usage: "振動の中心へ引き戻そうとする力。", reason: "この「変位xに比例し、逆向きに働く力」が存在することが単振動を引き起こす絶対条件です。" },
+                    { name: "ばね振り子の周期", math: "$$T=2\\pi\\sqrt{\\frac{m}{K}}$$", usage: "ばねが1往復する時間を求める時。", reason: "運動方程式 -Kx = m(-ω²x) を解いてωを求め、T=2π/ω に代入します。質量が重いほどゆっくりになります。" },
+                    { name: "単振り子の周期", math: "$$T=2\\pi\\sqrt{\\frac{l}{g}}$$", usage: "糸に吊るしたおもりの往復時間。", reason: "おもりの質量mには無関係で、糸の長さlだけで決まる性質（振り子の等時性）があります。" }
+                ]
+            },
+            "c8": {
+                chap: "力学", title: "8 万有引力", type: "orbit", 
+                simText: "【惑星の公転】太陽の重力（万有引力）が向心力となって、惑星は楕円や円の軌道を描きます。",
+                formulas: [
+                    { name: "ケプラーの第2・第3法則", math: "$$\\frac{1}{2}rv\\sin\\theta=\\text{定数} \\quad \\frac{T^2}{a^3}=\\text{定数}$$", usage: "惑星が太陽に近づくと速くなる性質や、遠い惑星ほど公転周期が長いことを計算する時。", reason: "引力が常に中心を向いている（中心力）ため面積速度が保存されます。" },
+                    { name: "万有引力の法則", math: "$$F=G\\frac{Mm}{r^2}$$", usage: "星同士など、質量を持つすべての物体が引き合う力。", reason: "ニュートンが発見した法則。質量に比例し、距離の2乗に反比例します。" },
+                    { name: "万有引力による位置エネルギー", math: "$$U=-G\\frac{Mm}{r}$$", usage: "宇宙空間での力学的エネルギー保存則を使う時。", reason: "無限遠を基準(0)とし、引力に逆らって無限遠まで運ぶ仕事から導かれるため、常にマイナスになります。" }
+                ]
+            },
+
+            // --- 熱力学 ---
+            "c9": {
+                chap: "熱力学", title: "9 熱と温度・状態変化", type: "thermo", 
+                simText: "【熱運動】温度が高いほど、気体分子は激しく飛び回ります。熱とは分子の運動エネルギーです。",
+                formulas: [
+                    { name: "熱量・熱容量・比熱", math: "$$Q=C\\Delta T \\quad Q=mc\\Delta T$$", usage: "物質の温度を上げるのに必要なエネルギーを計算する時。", reason: "C(熱容量)は物体全体、c(比熱)は1gあたりの温まりにくさの指標です。" },
+                    { name: "熱量の保存", math: "$$Q_{\\text{失った}}=Q_{\\text{得た}}$$", usage: "熱いお湯と冷たい水を混ぜたときの最終的な温度を求める時。", reason: "外部に熱が逃げない限り、移動した熱のトータルは等しくなります（エネルギー保存）。" },
+                    { name: "潜熱", math: "$$Q=mL$$", usage: "氷が水になるなど、状態変化に必要な熱量。", reason: "状態変化中は温度が上がらず、加えられた熱はすべて分子同士の結合を切るために使われます。" }
+                ]
+            },
+            "c10": {
+                chap: "熱力学", title: "10 気体の法則と内部エネルギー", type: "piston", 
+                simText: "【ピストンと気体】気体に熱を加えると分子が暴れ回り、膨張してピストンを外へ押し出す仕事をします。",
+                formulas: [
+                    { name: "理想気体の状態方程式", math: "$$PV=nRT$$", usage: "圧力P、体積V、温度Tのどれかが変化した時の状態を計算する時。", reason: "ボイル・シャルルの法則とアボガドロの法則をまとめた、熱力学の基本方程式です。" },
+                    { name: "内部エネルギー", math: "$$U=\\frac{3}{2}nRT$$", usage: "単原子分子理想気体の持つ全エネルギー。", reason: "気体分子の運動エネルギーの総和です。温度Tにのみ比例します。" },
+                    { name: "熱力学第一法則", math: "$$Q=\\Delta U+W$$", usage: "気体に熱を加えた時のエネルギーの行方を追う時。", reason: "加えた熱(Q)は、自分自身の温度を上げる(ΔU)ことと、ピストンを押す仕事(W)に使われます。" },
+                    { name: "熱効率", math: "$$e=\\frac{W}{Q_{\\text{in}}}=\\frac{Q_{\\text{in}}-Q_{\\text{out}}}{Q_{\\text{in}}}$$", usage: "車のエンジンのような熱機関の性能。", reason: "吸収した熱のうち、どれだけを無駄にせず実際の仕事(W)に変えられたかの割合です。" }
+                ]
+            },
+
+            // --- 波動 ---
+            "c11": {
+                chap: "波動", title: "11 波の性質", type: "wave", 
+                simText: "【横波の伝播】青い粒（媒質）は上下に振動しているだけですが、全体の形（波形）は右へ進んでいきます。",
+                formulas: [
+                    { name: "波の基本公式", math: "$$v=f\\lambda \\quad f=\\frac{1}{T}$$", usage: "波の速さ、振動数、波長の関係を計算する時。", reason: "1秒間にf回振動し、1回の振動で波長λだけ進むので、1秒間に進む距離(速さ)は f×λ になります。" },
+                    { name: "正弦波の式", math: "$$y=A\\sin2\\pi\\left(\\frac{t}{T}-\\frac{x}{\\lambda}\\right)$$", usage: "任意の位置x、時間tにおける波の高さyを表す時。", reason: "原点(x=0)の振動が、距離x離れた場所へ時間 x/v だけ遅れて伝わることを数式化したものです。" },
+                    { name: "波の干渉条件", math: "$$|l_1-l_2|=m\\lambda \\quad \\text{(強め合い)}$$", usage: "2つの波源からの波が強め合って大きくなる場所。", reason: "波源からの距離の差（経路差）が波長λの整数倍であれば、山と山がぴったり重なります。" }
+                ]
+            },
+            "c12": {
+                chap: "波動", title: "12 音波とドップラー効果", type: "doppler", 
+                simText: "【ドップラー効果】音源が右へ動くと、進行方向の波長が縮み、波が詰まって高音に聞こえます。",
+                formulas: [
+                    { name: "音速と温度", math: "$$V=331.5+0.6t$$", usage: "気温t[℃]での空気中の音の速さ。", reason: "温度が高いほど空気分子の運動が活発になり、隣の分子へ振動を速く伝えられるからです。" },
+                    { name: "弦・気柱の固有振動", math: "$$f_m=m\\frac{v}{2l} \\quad \\text{(弦・開管)}$$", usage: "ギターの弦やフルートが発する特定の音の高さを求める時。", reason: "両端が固定端・自由端となる条件を満たす、特定の波長の定常波しか存在できないためです。" },
+                    { name: "ドップラー効果", math: "$$f'=\\frac{V-v_o}{V-v_s}f$$", usage: "救急車が近づく・遠ざかる時の音の高さを計算する時。", reason: "音源が動く(vs)と波長が物理的に縮み、観測者が動く(vo)と1秒間に受け取る波の回数（相対速度）が変わるためです。" }
+                ]
+            },
+            "c13": {
+                chap: "波動", title: "13 光波とレンズ・干渉", type: "light", 
+                simText: "【光の回折・干渉】光も波の性質を持つため、スリットを通ると広がり、重なり合って縞模様を作ります。",
+                formulas: [
+                    { name: "屈折の法則", math: "$$\\frac{\\sin i}{\\sin r}=\\frac{v_1}{v_2}=\\frac{\\lambda_1}{\\lambda_2}=n_{12}$$", usage: "光が空気からガラスへ進むときの曲がり方。", reason: "媒質によって光の速さが変わるため、波面が曲がります。振動数fは変わりません。" },
+                    { name: "レンズの写像公式", math: "$$\\frac{1}{a}+\\frac{1}{b}=\\frac{1}{f}$$", usage: "物体からレンズまでの距離(a)、像ができる位置(b)、焦点距離(f)の関係。", reason: "凸レンズ、凹レンズ、実像、虚像によって符号のルールが変わります。" },
+                    { name: "ヤングの実験（明線条件）", math: "$$d\\frac{x}{l}=m\\lambda \\quad \\Delta x=\\frac{l\\lambda}{d}$$", usage: "2つのスリットを通った光が作る縞模様の間隔(Δx)。", reason: "経路差が波長λの整数倍になる場所で光が強め合います。dが小さいほど縞模様は広がります。" },
+                    { name: "薄膜の干渉", math: "$$2nd\\cos r=\\left(m+\\frac{1}{2}\\right)\\lambda$$", usage: "シャボン玉や水たまりの油が虹色に見える条件（反射光が強め合う）。", reason: "膜の表と裏で反射した光の往復の経路差(2nd)と、反射時の位相反転(πのズレ)を考慮します。" }
+                ]
+            },
+
+            // --- 電磁気 ---
+            "c14": {
+                chap: "電磁気", title: "14 電場と電位", type: "efield", 
+                simText: "【電場空間】プラス電荷の周りには外向きの電気力線が広がり、電位の「山」を作ります。",
+                formulas: [
+                    { name: "クーロンの法則", math: "$$F=k\\frac{q_1q_2}{r^2}$$", usage: "2つの電荷が引き合う・反発しあう静電気力。", reason: "万有引力と全く同じ形で、電荷の積に比例し、距離の2乗に反比例します。" },
+                    { name: "電場と受ける力", math: "$$E=k\\frac{Q}{r^2} \\quad F=qE$$", usage: "電場Eの中に電荷qを置いたときに受ける力。", reason: "電場Eとは「+1Cの電荷が受ける力」のこと。そこにq[C]を置けば、力はq倍のqEになります。" },
+                    { name: "電位", math: "$$V=k\\frac{Q}{r} \\quad U=qV$$", usage: "電気的な高さ（位置エネルギー）。", reason: "電位Vとは「+1Cあたりの位置エネルギー」。電位Vの場所に電荷qを置けば、エネルギーはqVになります。" },
+                    { name: "一様な電場と電圧", math: "$$V=Ed$$", usage: "平行な極板間の電圧と電場の関係。", reason: "電場E（坂の傾き）が一定なので、距離dをかけると高さ（電圧V）になります。" }
+                ]
+            },
+            "c15": {
+                chap: "電磁気", title: "15 コンデンサー", type: "capacitor", 
+                simText: "【平行平板コンデンサー】2枚の金属板に電圧をかけると、プラスとマイナスの電荷が引き合って蓄えられます。",
+                formulas: [
+                    { name: "基本式と電気容量", math: "$$Q=CV \\quad C=\\varepsilon\\frac{S}{d}$$", usage: "電圧Vをかけた時に溜まる電気量Q。", reason: "器の大きさCは、極板面積Sが広いほど大きく、極板間隔dが狭い（互いに引き合いやすい）ほど大きくなります。" },
+                    { name: "静電エネルギー", math: "$$U=\\frac{1}{2}QV=\\frac{1}{2}CV^2$$", usage: "コンデンサーに蓄えられたエネルギー。", reason: "充電していく際のQ-Vグラフの面積（三角形）に相当するため、1/2が付きます。" }
+                ]
+            },
+            "c16": {
+                chap: "電磁気", title: "16 電流と直流回路", type: "current", 
+                simText: "【導線内の電流】電圧をかけると、導線内の自由電子が一斉に移動を始め、これが電流となります。",
+                formulas: [
+                    { name: "電流の定義と微視的モデル", math: "$$I=\\frac{q}{t} \\quad I=envS$$", usage: "電流Iの正体を電子の動きから説明する時。", reason: "電子の密度n、電荷e、平均速度v、断面積Sを掛けると、1秒間に通過する電気の総量になります。" },
+                    { name: "オームの法則と抵抗率", math: "$$V=RI \\quad R=\\rho\\frac{l}{S}$$", usage: "回路の電流・電圧の計算と、抵抗器の抵抗値R。", reason: "抵抗率は材質により、導線が長い(l)ほど通りにくく、太い(S)ほど通りやすくなります。" },
+                    { name: "電力とジュール熱", math: "$$P=VI=I^2R \\quad Q=Pt$$", usage: "抵抗器が発熱するエネルギーや消費電力。", reason: "電子が金属の原子に衝突して失った運動エネルギーが、熱エネルギーに変わります。" }
+                ]
+            },
+            "c17": {
+                chap: "電磁気", title: "17 磁場とローレンツ力", type: "magnetic", 
+                simText: "【ローレンツ力】磁場中を飛ぶ電子は、常に進行方向と垂直な力を受け、美しいらせん・円軌道を描きます。",
+                formulas: [
+                    { name: "電流が作る磁場", math: "$$H=\\frac{I}{2\\pi r} \\quad \\text{(直線電流)}$$", usage: "電線に電流を流した周りにできる磁場の強さ。", reason: "右ねじの法則で向きが決まり、距離rに反比例して弱くなります。" },
+                    { name: "電磁力", math: "$$F=IBl\\sin\\theta$$", usage: "磁場中の導線に電流を流した時にはたらく力（モーターの原理）。", reason: "フレミングの左手の法則。電流Iと磁束密度Bに比例します。" },
+                    { name: "ローレンツ力", math: "$$F=qvB\\sin\\theta$$", usage: "磁場中を飛ぶ単体の電子などが受ける力。", reason: "電流の受ける電磁力のミクロ版です。常に進行方向に垂直に働くため、仕事をせず速さは変えません。" },
+                    { name: "荷電粒子の円運動の半径", math: "$$r=\\frac{mv}{qB}$$", usage: "磁場に垂直に入射した電子の軌道半径。", reason: "向心力(mv²/r) ＝ ローレンツ力(qvB) の方程式を解いて導きます。" }
+                ]
+            },
+            "c18": {
+                chap: "電磁気", title: "18 電磁誘導", type: "induction", 
+                simText: "【電磁誘導】コイルに磁石を近づけると、コイルは磁界の変化を嫌って自ら電流を流し、反発する磁界を作ります。",
+                formulas: [
+                    { name: "磁束", math: "$$\\Phi=BS\\cos\\theta$$", usage: "ある面積Sを垂直に貫く磁力線の総本数。", reason: "磁束密度B（磁場の濃さ）と面積Sの積です。" },
+                    { name: "ファラデーの電磁誘導の法則", math: "$$V=-N\\frac{\\Delta\\Phi}{\\Delta t}$$", usage: "コイルを貫く磁束が変化した時に発生する電圧。", reason: "マイナス記号は「変化を打ち消す向き（レンツの法則）」を意味します。速く動かすほど高電圧になります。" },
+                    { name: "導体棒の誘導起電力", math: "$$V=vBl$$", usage: "磁場を垂直に横切って動く金属棒に生じる電圧。", reason: "中の自由電子がローレンツ力を受けて端に偏ることで、棒自体が電池になります。" }
+                ]
+            },
+            "c19": {
+                chap: "電磁気", title: "19 交流回路と電磁波", type: "ac", 
+                simText: "【交流】家庭用コンセントのように、電圧の向きと大きさがサインカーブを描いて絶えず変化します。",
+                formulas: [
+                    { name: "交流電圧と実効値", math: "$$V=V_0\\sin\\omega t \\quad V_e=\\frac{V_0}{\\sqrt{2}}$$", usage: "交流の電圧の変化と、直流に換算した平均的な効果(実効値)。", reason: "発電機のコイルが一定の角速度ωで回転して作られるため、サインカーブになります。" },
+                    { name: "リアクタンス（抵抗成分）", math: "$$X_L=\\omega L \\quad X_C=\\frac{1}{\\omega C}$$", usage: "コイルとコンデンサーの交流に対する「流れにくさ」。", reason: "コイルは高周波(ωが大)ほど通しにくく、コンデンサーは高周波ほど通しやすい性質があります。" },
+                    { name: "共振周波数", math: "$$f_0=\\frac{1}{2\\pi\\sqrt{LC}}$$", usage: "RLC回路に最も電流が流れやすくなる特定の周波数。", reason: "コイルとコンデンサーのリアクタンスが打ち消し合う条件 (ωL = 1/ωC) から導かれます。" }
+                ]
+            },
+
+            // --- 原子 ---
+            "c20": {
+                chap: "原子", title: "20 光電効果と物質波", type: "atom_photo", 
+                simText: "【光電効果】光は「波」ではなく「粒（光子）」として振る舞い、金属内の電子に衝突して弾き飛ばします。",
+                formulas: [
+                    { name: "光子のエネルギー", math: "$$E=h\\nu=h\\frac{c}{\\lambda}$$", usage: "光を「粒」と考えたときの、1粒あたりのエネルギー。", reason: "アインシュタインの光量子仮説。プランク定数hに振動数νを掛けた値になります。" },
+                    { name: "光電方程式", math: "$$K_{\\max}=h\\nu-W$$", usage: "光を当てて飛び出した電子の運動エネルギー。", reason: "もらったエネルギー(hν)から、金属から脱出するための仕事関数(W)を引いた残りです。" },
+                    { name: "物質波（ド・ブロイ波）", math: "$$\\lambda=\\frac{h}{p}=\\frac{h}{mv}$$", usage: "電子のような「粒」が持つ「波」としての性質（波長）。", reason: "運動量pが大きい（速くて重い）ほど波長は短くなり、波の性質は目立たなくなります。" }
+                ]
+            },
+            "c21": {
+                chap: "原子", title: "21 ボーアの原子模型", type: "atom_bohr", 
+                simText: "【ボーア模型】電子は原子核の周りの特定の軌道しか回れず、軌道をジャンプする時に光（エネルギー）を出します。",
+                formulas: [
+                    { name: "量子条件", math: "$$mvr=n\\frac{h}{2\\pi} \\quad (2\\pi r=n\\lambda)$$", usage: "電子が光を出さずに安定して回れる特定の軌道半径の条件。", reason: "電子の波（物質波）が円軌道上で綺麗に繋がる（定常波になる）ためです。" },
+                    { name: "振動数条件", math: "$$h\\nu=E_n-E_{m}$$", usage: "高い軌道から低い軌道へ移る時に放出される光のエネルギー。", reason: "エネルギー保存則。軌道のエネルギー差が、1個の光子として放出されます。" }
+                ]
+            },
+            "c22": {
+                chap: "原子", title: "22 原子核と放射線", type: "atom_nucleus", 
+                simText: "【核崩壊】不安定な原子核は、アルファ粒子（ヘリウムの核）などを放出して、別の安定な原子核へ変わります。",
+                formulas: [
+                    { name: "質量欠損と結合エネルギー", math: "$$\\Delta m=(\\text{部品の質量和})-(\\text{実際の核の質量}) \\quad E=\\Delta mc^2$$", usage: "原子核をバラバラにするのに必要な莫大なエネルギー。", reason: "アインシュタインの相対性理論。結合時に失われた質量(Δm)が、光速の2乗を掛けて莫大なエネルギーに変わっています。" },
+                    { name: "半減期の式", math: "$$N=N_0\\left(\\frac{1}{2}\\right)^{\\frac{t}{T}}$$", usage: "時間tの後に、崩壊せずに残っている放射性同位体の数。", reason: "半減期Tごとに数が半分(1/2)になるため、経過時間に応じた指数関数になります。" }
+                ]
+            }
+        };
+
+        // ==========================================
+        // 2. UI・サイドバーの自動生成
+        // ==========================================
+        const menuList = document.getElementById('menu-list');
+        let currentChap = "";
+        
+        Object.keys(physicsData).forEach(key => {
+            const data = physicsData[key];
+            if (data.chap !== currentChap) {
+                const chapLi = document.createElement('li');
+                chapLi.className = 'chapter';
+                chapLi.innerText = data.chap;
+                menuList.appendChild(chapLi);
+                currentChap = data.chap;
+            }
+            const itemLi = document.createElement('li');
+            itemLi.className = 'item';
+            itemLi.dataset.id = key;
+            itemLi.innerText = data.title;
+            menuList.appendChild(itemLi);
+        });
+
+        // ==========================================
+        // 3. Three.js 3Dシミュレーションエンジン
+        // ==========================================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        // カメラ設定
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio); // 高解像度対応
+        container.appendChild(renderer.domElement);
+
+        // ライティング（高品質な陰影）
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 15);
+        scene.add(dirLight);
+        const pointLight = new THREE.PointLight(0x3498db, 1, 50);
+        pointLight.position.set(0, 0, 0);
+        scene.add(pointLight);
+
+        let currentType = "";
+        let isPlaying = true;
+        let time = 0;
+        let objects = [];
+
+        function clearScene() {
+            objects.forEach(obj => {
+                if(obj.geometry) obj.geometry.dispose();
+                if(obj.material) obj.material.dispose();
+                scene.remove(obj);
+            });
+            objects = [];
+            time = 0;
+        }
+
+        // オブジェクト生成ヘルパー
+        function createSphere(color, radius, emissive=0x000000) {
+            const mat = new THREE.MeshStandardMaterial({ 
+                color: color, emissive: emissive, roughness: 0.2, metalness: 0.5 
+            });
+            const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 32, 32), mat);
+            scene.add(mesh);
+            objects.push(mesh);
+            return mesh;
+        }
+        function createBox(w, h, d, color, opacity=1) {
+            const mat = new THREE.MeshStandardMaterial({ color: color, transparent: opacity<1, opacity: opacity });
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+            scene.add(mesh);
+            objects.push(mesh);
+            return mesh;
+        }
+
+        // シーン初期化
+        function initSimulation(type) {
+            clearScene();
+            currentType = type;
+            scene.background = new THREE.Color(0x0f172a); // ダークブルー背景
+            camera.position.set(0, 5, 18);
+            camera.lookAt(0, 0, 0);
+
+            // グリッド床（一部のシーンのみ）
+            if (["kinematics", "force", "energy", "collision", "harmonic"].includes(type)) {
+                const grid = new THREE.GridHelper(30, 30, 0x334155, 0x1e293b);
+                grid.position.y = -1;
+                scene.add(grid); objects.push(grid);
+            }
+
+            if (type === "kinematics") {
+                createSphere(0xef4444, 0.8).position.set(-6, 0, 0);
+            } 
+            else if (type === "force") {
+                const slope = createBox(15, 0.5, 5, 0x475569);
+                slope.rotation.z = -Math.PI / 6;
+                createBox(1.5, 1.5, 1.5, 0xf59e0b).position.set(-5, 2, 0);
+            }
+            else if (type === "rotate") {
+                createBox(12, 0.4, 1, 0xd97706); // シーソー
+                createSphere(0x3b82f6, 1.0).position.set(-4, 1, 0);
+                createSphere(0x10b981, 0.7).position.set(5, 0.7, 0);
+            }
+            else if (type === "energy") {
+                createSphere(0x8b5cf6, 0.8); // 振り子
+                const string = createBox(0.1, 8, 0.1, 0x94a3b8);
+                string.position.y = 4;
+            }
+            else if (type === "collision") {
+                createSphere(0xef4444, 0.8).position.set(-6, 0, 0);
+                createSphere(0x3b82f6, 0.8).position.set(3, 0, 0);
+            }
+            else if (type === "circular") {
+                const orbit = new THREE.Mesh(new THREE.RingGeometry(4.9, 5.0, 64), new THREE.MeshBasicMaterial({ color: 0x334155, side: THREE.DoubleSide }));
+                orbit.rotation.x = Math.PI / 2;
+                scene.add(orbit); objects.push(orbit);
+                createSphere(0x64748b, 0.4).position.set(0,0,0);
+                createSphere(0x10b981, 0.6);
+            }
+            else if (type === "harmonic") {
+                createSphere(0x10b981, 0.8); // 振動子
+                // 参考用の円軌道
+                const orbit = new THREE.Mesh(new THREE.RingGeometry(4.95, 5.05, 64), new THREE.MeshBasicMaterial({ color: 0x334155 }));
+                scene.add(orbit); objects.push(orbit);
+                createSphere(0x475569, 0.3); // 影の元
+            }
+            else if (type === "orbit") {
+                createSphere(0xf59e0b, 1.5, 0xd97706); // 太陽
+                createSphere(0x3b82f6, 0.6); // 地球
+            }
+            else if (type === "thermo" || type === "piston") {
+                createBox(8, 6, 6, 0xffffff, 0.1); // 容器
+                if(type==="piston") createBox(0.2, 5.8, 5.8, 0xef4444, 0.5).position.x = 4; // ピストン
+                for(let i=0; i<30; i++){
+                    let p = createSphere(0xf87171, 0.2);
+                    p.position.set((Math.random()-0.5)*7, (Math.random()-0.5)*5, (Math.random()-0.5)*5);
+                    p.userData = { v: new THREE.Vector3((Math.random()-0.5)*0.3, (Math.random()-0.5)*0.3, (Math.random()-0.5)*0.3) };
+                }
+            }
+            else if (type === "wave" || type === "doppler" || type === "light") {
+                for(let i=0; i<40; i++){
+                    createSphere(0x3b82f6, 0.25).position.x = -8 + i*0.4;
+                }
+            }
+            else if (type === "efield") {
+                createSphere(0xef4444, 0.8); // +電荷
+                for(let i=0; i<8; i++){
+                    let line = createBox(6, 0.05, 0.05, 0xef4444, 0.5);
+                    line.rotation.z = (Math.PI/4)*i;
+                }
+            }
+            else if (type === "capacitor") {
+                createBox(10, 0.2, 4, 0xef4444).position.y = 3;
+                createBox(10, 0.2, 4, 0x3b82f6).position.y = -3;
+                createSphere(0xf59e0b, 0.3).position.set(-4, 0, 0); // 電子
+            }
+            else if (type === "current") {
+                createBox(12, 1.5, 1.5, 0x94a3b8, 0.3); // 導線
+                for(let i=0; i<15; i++){
+                    let e = createSphere(0xf59e0b, 0.2);
+                    e.position.set((Math.random()-0.5)*10, (Math.random()-0.5)*1, (Math.random()-0.5)*1);
+                }
+            }
+            else if (type === "magnetic") {
+                createSphere(0xf59e0b, 0.4); // らせん運動する電子
+                for(let i=0; i<5; i++) createBox(0.05, 10, 0.05, 0x10b981, 0.5).position.x = -4 + i*2; // 磁場
+            }
+            else if (type === "induction") {
+                createBox(4, 4, 4, 0x8b5cf6, 0.3); // コイル
+                createBox(1, 2, 1, 0xef4444).position.set(0, 5, 0); // 磁石
+            }
+            else if (type === "ac") {
+                for(let i=0; i<40; i++) createSphere(0xf59e0b, 0.15).position.x = -8 + i*0.4;
+            }
+            else if (type === "atom_photo") {
+                createBox(10, 8, 0.2, 0x94a3b8).position.set(0,0,-1); // 金属板
+                createSphere(0xf59e0b, 0.2).position.set(0,0,0); // 電子
+                createSphere(0xecf0f1, 0.15).position.set(-5, 5, 2); // 光子
+            }
+            else if (type === "atom_bohr") {
+                createSphere(0xef4444, 1.0); // 核
+                const orbit1 = new THREE.Mesh(new THREE.RingGeometry(2.9, 3.0, 64), new THREE.MeshBasicMaterial({ color: 0x334155, side: THREE.DoubleSide }));
+                const orbit2 = new THREE.Mesh(new THREE.RingGeometry(4.9, 5.0, 64), new THREE.MeshBasicMaterial({ color: 0x334155, side: THREE.DoubleSide }));
+                orbit1.rotation.x = Math.PI / 2; orbit2.rotation.x = Math.PI / 2;
+                scene.add(orbit1); scene.add(orbit2); objects.push(orbit1, orbit2);
+                createSphere(0x3b82f6, 0.3); // 電子
+            }
+            else if (type === "atom_nucleus") {
+                createSphere(0xef4444, 1.2).position.set(0,0,0); // 親核
+                createSphere(0x3b82f6, 0.5).position.set(0,0,0); // α粒子
+            }
+        }
+
+        // アニメーションループ
+        function animate() {
+            requestAnimationFrame(animate);
+            if (!isPlaying) return;
+            time += 0.03;
+
+            if (currentType === "kinematics") {
+                let x = -6 + 0.5 * 1.5 * (time*time); if(x>6) time=0;
+                objects[1].position.x = x;
+            } 
+            else if (currentType === "force") {
+                objects[2].position.x = -5 + time*2;
+                objects[2].position.y = 2 - time*1.15;
+                if(objects[2].position.x > 5) time=0;
+            }
+            else if (currentType === "rotate") {
+                objects[1].rotation.z = Math.sin(time)*0.2;
+                objects[2].position.y = 1 + Math.sin(time)*0.2 * -4;
+                objects[3].position.y = 0.7 + Math.sin(time)*0.2 * 5;
+            }
+            else if (currentType === "energy") {
+                let angle = Math.sin(time*1.5) * 0.8;
+                objects[1].position.set(8*Math.sin(angle), 4 - 8*Math.cos(angle), 0);
+            }
+            else if (currentType === "collision") {
+                if(time<2) { objects[1].position.x = -6 + time*3; objects[2].position.x = 3; }
+                else { objects[1].position.x = 0; objects[2].position.x = 3 + (time-2)*3; }
+                if(time>4) time=0;
+            }
+            else if (currentType === "circular" || currentType === "orbit") {
+                let r = currentType==="orbit" ? 6 : 5;
+                objects[2].position.set(r*Math.cos(time*1.5), 0, r*Math.sin(time*1.5));
+            }
+            else if (currentType === "harmonic") {
+                objects[1].position.x = 5*Math.sin(time*2); // 振動子
+                objects[3].position.set(5*Math.sin(time*2), 5*Math.cos(time*2), 0); // 円運動
+            }
+            else if (currentType === "thermo" || currentType === "piston") {
+                let start = currentType==="piston" ? 3 : 2;
+                if(currentType==="piston") objects[2].position.x = 4 + Math.sin(time)*1.5;
+                for(let i=start; i<objects.length; i++){
+                    let p = objects[i]; p.position.add(p.userData.v);
+                    let limitX = currentType==="piston" ? objects[2].position.x-0.3 : 3.8;
+                    if(p.position.x > limitX || p.position.x < -3.8) p.userData.v.x *= -1;
+                    if(p.position.y > 2.8 || p.position.y < -2.8) p.userData.v.y *= -1;
+                    if(p.position.z > 2.8 || p.position.z < -2.8) p.userData.v.z *= -1;
+                }
+            }
+            else if (currentType === "wave" || currentType === "doppler" || currentType === "light") {
+                for(let i=1; i<41; i++){
+                    let x = objects[i].position.x;
+                    objects[i].position.y = 2*Math.sin(x - time*4);
+                }
+            }
+            else if (currentType === "capacitor") {
+                objects[3].position.x += 0.1;
+                objects[3].position.y += 0.05; // +極へ引かれる
+                if(objects[3].position.x > 4) objects[3].position.set(-4, -2, 0);
+            }
+            else if (currentType === "current") {
+                for(let i=2; i<17; i++){
+                    objects[i].position.x += 0.1;
+                    if(objects[i].position.x > 6) objects[i].position.x = -6;
+                }
+            }
+            else if (currentType === "magnetic") {
+                objects[1].position.set(2*Math.cos(time*3), time*0.5 - 2, 2*Math.sin(time*3)); // らせん
+                if(objects[1].position.y > 3) time=0;
+            }
+            else if (currentType === "induction") {
+                objects[2].position.y = 5 - Math.abs(Math.sin(time*2))*5; // 磁石の抜き差し
+            }
+            else if (currentType === "ac") {
+                for(let i=1; i<41; i++){
+                    let x = objects[i].position.x;
+                    objects[i].position.y = 3*Math.sin(time*3) * Math.sin(x*0.5); // 定常波的な振動
+                }
+            }
+            else if (currentType === "atom_photo") {
+                let px = -5 + time*5; let py = 5 - time*5;
+                if(py > 0) { objects[3].position.set(px, py, 2); objects[2].position.set(0,0,0); }
+                else { objects[3].position.set(0,-10,0); objects[2].position.set((time-1)*5, 0, 2); } // 電子が飛び出す
+                if(time>2.5) time=0;
+            }
+            else if (currentType === "atom_bohr") {
+                let r = (Math.floor(time) % 2 === 0) ? 3 : 5; // 軌道ジャンプ
+                objects[4].position.set(r*Math.cos(time*4), 0, r*Math.sin(time*4));
+            }
+            else if (currentType === "atom_nucleus") {
+                if(time>1) {
+                    objects[2].position.x = (time-1)*4; // α粒子放出
+                    objects[1].position.x = -(time-1)*0.5; // 反跳
+                }
+                if(time>3) { time=0; objects[1].position.set(0,0,0); objects[2].position.set(0,0,0); }
+            }
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // カメラのマウス操作 (ドラッグで回転)
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        
+        container.addEventListener('mousedown', (e) => { isDragging = true; });
+        container.addEventListener('touchstart', (e) => { isDragging = true; previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }, {passive: true});
+        
+        window.addEventListener('mouseup', () => { isDragging = false; });
+        window.addEventListener('touchend', () => { isDragging = false; });
+        
+        container.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                let deltaMove = { x: e.offsetX - previousMousePosition.x, y: e.offsetY - previousMousePosition.y };
+                camera.position.x = camera.position.x * Math.cos(deltaMove.x * 0.01) - camera.position.z * Math.sin(deltaMove.x * 0.01);
+                camera.position.z = camera.position.x * Math.sin(deltaMove.x * 0.01) + camera.position.z * Math.cos(deltaMove.x * 0.01);
+                camera.position.y += deltaMove.y * 0.05;
+                camera.lookAt(0, 0, 0);
+            }
+            previousMousePosition = { x: e.offsetX, y: e.offsetY };
+        });
+        container.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                let deltaMove = { x: e.touches[0].clientX - previousMousePosition.x, y: e.touches[0].clientY - previousMousePosition.y };
+                camera.position.x = camera.position.x * Math.cos(deltaMove.x * 0.01) - camera.position.z * Math.sin(deltaMove.x * 0.01);
+                camera.position.z = camera.position.x * Math.sin(deltaMove.x * 0.01) + camera.position.z * Math.cos(deltaMove.x * 0.01);
+                camera.position.y += deltaMove.y * 0.05;
+                camera.lookAt(0, 0, 0);
+                previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+        }, {passive: true});
+
+
+        // ==========================================
+        // 4. UI操作連動（メニュークリック）
+        // ==========================================
+        document.querySelectorAll('.sidebar .item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                // アクティブ状態の更新
+                document.querySelectorAll('.sidebar .item').forEach(el => el.classList.remove('active'));
+                e.target.classList.add('active');
+
+                const data = physicsData[e.target.dataset.id];
+                
+                // テキスト更新
+                document.getElementById('unit-title').innerText = data.title;
+                document.getElementById('sim-desc').innerText = data.simText;
+                
+                // 公式カードの生成
+                const cardsContainer = document.getElementById('formula-cards-container');
+                cardsContainer.innerHTML = "";
+                data.formulas.forEach(f => {
+                    cardsContainer.innerHTML += `
+                        <div class="formula-card">
+                            <h3>${f.name}</h3>
+                            <div class="math-box">${f.math}</div>
+                            <div class="desc-section usage">
+                                <strong>いつ使う？</strong><br>${f.usage}
+                            </div>
+                            <div class="desc-section reason">
+                                <strong>なぜこうなる？（式の意味）</strong><br>${f.reason}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                // MathJaxによる数式レンダリング（再描画）
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    MathJax.typesetPromise();
+                }
+
+                // 3Dシーンの切り替えとカメラリセット
+                initSimulation(data.type);
+            });
+        });
+
+        // ボタンとリサイズ
+        const playBtn = document.getElementById('playBtn');
+        playBtn.addEventListener('click', () => { 
+            isPlaying = !isPlaying; 
+            playBtn.innerText = isPlaying ? "⏸ 一時停止" : "▶️ 再生";
+        });
+        document.getElementById('resetBtn').addEventListener('click', () => { time = 0; });
+        
+        window.addEventListener('resize', () => { 
+            camera.aspect = container.clientWidth / container.clientHeight; 
+            camera.updateProjectionMatrix(); 
+            renderer.setSize(container.clientWidth, container.clientHeight); 
+        });
+
+        // 初期起動：最初のメニューをクリック状態にする
+        setTimeout(() => document.querySelector('.sidebar .item').click(), 500);
+
+    </script>
+</body>
+</html>
