@@ -3,8 +3,8 @@ const physicsData = {
     "c1": {
         chap: "力学", title: "1 運動の表し方",
         formulas: [
-            { name: "等速直線運動の変位", math: "$$x=vt$$", usage: "速度が一定のときの進んだ距離。", reason: "距離＝速さ×時間", animType: "linear", simText: "【青矢印:速度】速度が一定(a=0)で進み続ける運動です。" },
-            { name: "等加速度直線運動（速度）", math: "$$v=v_0+at$$", usage: "加速度aで加速している物体の、時間t後の速度。", reason: "初速度に「1秒あたりに増える速度(a)×秒数(t)」を足します。", animType: "accel", simText: "【緑矢印:加速度】徐々にスピード(青)が上がっていく運動です。" },
+            { name: "等速直線運動の変位", math: "$$x=vt$$", usage: "速度が一定のときの進んだ距離。", reason: "距離＝速さ×時間", animType: "linear", simText: "速度vが一定で進み続ける運動です。" },
+            { name: "等加速度直線運動（速度）", math: "$$v=v_0+at$$", usage: "加速度aで加速している物体の、時間t後の速度。", reason: "初速度に「1秒あたりに増える速度(a)×秒数(t)」を足します。", animType: "accel", simText: "【緑:加速度】徐々にスピード(青)が上がっていく運動です。" },
             { name: "等加速度直線運動（変位）", math: "$$x=v_0t+\\frac{1}{2}at^2$$", usage: "時間tの間に進んだ距離。", reason: "v-tグラフの面積（長方形＋三角形）です。", animType: "accel", simText: "進む距離が二次関数的に増えていきます。" },
             { name: "時間を含まない式", math: "$$v^2-v_0^2=2ax$$", usage: "時間が分からないときに速度と距離の関係を出す式。", reason: "上の2式から時間tを消去して整理したものです。", animType: "accel", simText: "時間(t)の情報がなくても、距離(x)と速度(v)の関係が分かります。" },
             { name: "自由落下", math: "$$v=gt \\quad y=\\frac{1}{2}gt^2$$", usage: "物体を静かに手放した時の速度と落下距離。", reason: "等加速度運動の式で、v0=0, a=g（重力加速度）としたものです。", animType: "fall", simText: "重力加速度gによって、下に向かって等加速度運動をします。" },
@@ -15,7 +15,7 @@ const physicsData = {
     "c2": {
         chap: "力学", title: "2 色々な力・運動方程式",
         formulas: [
-            { name: "重力", math: "$$W=mg$$", usage: "質量mの物体が地球に引っ張られる力を求める時。", reason: "質量が大きいほど強い力を受けます。", animType: "force_g", simText: "【赤矢印:力】物体の中心から常に下に向かってはたらく力です。" },
+            { name: "重力", math: "$$W=mg$$", usage: "質量mの物体が地球に引っ張られる力を求める時。", reason: "質量が大きいほど強い力を受けます。", animType: "force_g", simText: "物体の中心から常に下に向かってはたらく力です。" },
             { name: "フックの法則（弾性力）", math: "$$F=kx$$", usage: "ばねの伸び・縮みxから、戻ろうとする力を求める時。", reason: "ばね定数k（固さ）と変形量に比例します。", animType: "spring", simText: "ばねが伸びた分だけ、引き戻す力（復元力）が大きくなります。" },
             { name: "最大摩擦力（静止）", math: "$$F_0=\\mu N$$", usage: "物体が滑り出す直前の、ギリギリ耐えている摩擦力。", reason: "静止摩擦係数μと、垂直抗力Nに比例します。", animType: "friction_s", simText: "引く力に耐えていますが、限界を超えると滑り出します。" },
             { name: "動摩擦力", math: "$$F'=\\mu' N$$", usage: "滑って動いている最中の摩擦力。", reason: "動摩擦係数μ'を使用します。速度には関係しません。", animType: "friction_d", simText: "動いている間、進行方向と逆向きに一定の力でブレーキをかけます。" },
@@ -35,10 +35,10 @@ const physicsData = {
     "c4": {
         chap: "力学", title: "4 仕事とエネルギー",
         formulas: [
-            { name: "仕事", math: "$$W=Fx\\cos\\theta$$", usage: "力が物体を移動させた効果(W)。", reason: "移動方向と同じ向きの力の成分だけが仕事をします。", animType: "work", simText: "物体を押して移動させた分だけ、物体にエネルギーを与えます。" },
+            { name: "仕事", math: "$$W=Fx\\cos\\theta$$", usage: "斜めから引く力が物体を移動させた効果(W)。", reason: "cosθで「移動方向と同じ向きの力の成分」を取り出します。", animType: "work_cos", simText: "斜めの力を【Fcosθ(水平)】と【Fsinθ(垂直)】に分解します。" },
             { name: "仕事率", math: "$$P=\\frac{W}{t}$$", usage: "1秒間あたりにする仕事。", reason: "仕事Wを時間tで割ったもの（パワー）。", animType: "power", simText: "同じ仕事でも、短時間で終わらせる方が仕事率は高くなります。" },
-            { name: "運動エネルギー", math: "$$K=\\frac{1}{2}mv^2$$", usage: "速さvで動く物体が持つエネルギー。", reason: "運動方程式から仕事を積分することで導かれます。", animType: "k_energy", simText: "【緑のグラフ:運動エネルギー】速度が速いほどエネルギーが大きくなります。" },
-            { name: "重力による位置エネルギー", math: "$$U=mgh$$", usage: "高さhにある物体が持つエネルギー。", reason: "基準面まで落下する間に重力がする仕事mghに等しいです。", animType: "p_energy", simText: "【オレンジのグラフ:位置エネルギー】高い位置ほど大きくなります。" },
+            { name: "運動エネルギー", math: "$$K=\\frac{1}{2}mv^2$$", usage: "速さvで動く物体が持つエネルギー。", reason: "運動方程式から仕事を積分することで導かれます。", animType: "k_energy", simText: "速度が速いほどエネルギーが大きくなります。" },
+            { name: "重力による位置エネルギー", math: "$$U=mgh$$", usage: "高さhにある物体が持つエネルギー。", reason: "基準面まで落下する間に重力がする仕事mghに等しいです。", animType: "p_energy", simText: "高い位置ほど大きくなります。" },
             { name: "弾性力による位置エネルギー", math: "$$U=\\frac{1}{2}kx^2$$", usage: "ばねが変形している時に蓄えられるエネルギー。", reason: "フックの法則(F=kx)のグラフの面積から求められます。", animType: "s_energy", simText: "ばねを縮めるほど、反発するためのエネルギーが蓄えられます。" },
             { name: "力学的エネルギー保存則", math: "$$\\frac{1}{2}mv^2+mgh+\\frac{1}{2}kx^2=\\text{一定}$$", usage: "摩擦や空気抵抗がないときの、速度や高さを求める時。", reason: "保存力だけが仕事をする場合、エネルギーの総和は変わりません。", animType: "pendulum", simText: "振り子運動。位置エネルギーと運動エネルギーの総和は常に一定です。" }
         ]
@@ -55,7 +55,7 @@ const physicsData = {
     "c6": {
         chap: "力学", title: "6 円運動と慣性力",
         formulas: [
-            { name: "角速度", math: "$$\\omega=\\frac{\\theta}{t}$$", usage: "1秒間に回転する角度。", reason: "角度を時間で割ります。", animType: "circular", simText: "一定のペースで角度が変化しながら回転します。" },
+            { name: "角速度", math: "$$\\omega=\\frac{\\theta}{t}$$", usage: "1秒間に回転する角度。", reason: "角度を時間で割ります。", animType: "circular", simText: "一定のペースで角度θ(=ωt)が変化しながら回転します。" },
             { name: "線速度", math: "$$v=r\\omega$$", usage: "円周上を動く物体の実際の速さ。", reason: "弧の長さ(rθ)を時間で割ったもの。", animType: "circular_v", simText: "【青矢印:速度】常に円の接線方向を向いています。" },
             { name: "周期と回転数", math: "$$T=\\frac{2\\pi}{\\omega}=\\frac{2\\pi r}{v} \\quad n=\\frac{1}{T}$$", usage: "1周する時間と、1秒間に回転する回数。", reason: "1周の距離を速さで割ります。", animType: "circular", simText: "1周するのにかかる時間が周期です。" },
             { name: "向心加速度", math: "$$a=r\\omega^2=\\frac{v^2}{r}$$", usage: "円の中心に向かう加速度。", reason: "速度の「向き」を変え続けるために必要な加速度です。", animType: "circular_a", simText: "【緑矢印:加速度】常に中心を向く加速度が軌道を曲げ続けます。" },
@@ -66,20 +66,20 @@ const physicsData = {
     "c7": {
         chap: "力学", title: "7 単振動",
         formulas: [
-            { name: "変位", math: "$$x=A\\sin\\omega t$$", usage: "単振動中の任意の位置。", reason: "等速円運動の正射影(影)の動きです。", animType: "harmonic_x", simText: "円運動の縦方向の影（プロット）がサインカーブ（単振動）になります。" },
-            { name: "速度", math: "$$v=A\\omega\\cos\\omega t$$", usage: "単振動中の任意の速度。", reason: "変位を時間微分したもの。中心で最大になります。", animType: "harmonic_v", simText: "【青矢印:速度】振動の中心を通過する瞬間が一番スピードが速いです。" },
-            { name: "加速度", math: "$$a=-A\\omega^2\\sin\\omega t=-\\omega^2x$$", usage: "単振動中の任意の加速度。", reason: "速度を微分。常に変位と逆向き(中心向き)に働きます。", animType: "harmonic_a", simText: "【緑矢印:加速度】端に行くほど、中心に戻ろうとする加速度が大きくなります。" },
-            { name: "復元力", math: "$$F=-Kx$$", usage: "単振動の中心に引き戻す力。", reason: "変位に比例する逆向きの力が単振動の条件です。", animType: "harmonic_f", simText: "【赤矢印:復元力】変位に比例した復元力が単振動を生み出します。" },
+            { name: "変位", math: "$$x=A\\sin\\omega t$$", usage: "単振動中の任意の位置。", reason: "等速円運動のy成分(sin)を取り出したものです。", animType: "harmonic_sin", simText: "【sinの可視化】円運動の縦方向の成分 A sin(ωt) が単振動になります。" },
+            { name: "速度", math: "$$v=A\\omega\\cos\\omega t$$", usage: "単振動中の任意の速度。", reason: "変位を時間微分したもの。中心で最大になります。", animType: "harmonic_v", simText: "振動の中心を通過する瞬間が一番スピードが速いです。" },
+            { name: "加速度", math: "$$a=-A\\omega^2\\sin\\omega t=-\\omega^2x$$", usage: "単振動中の任意の加速度。", reason: "速度を微分。常に変位と逆向き(中心向き)に働きます。", animType: "harmonic_a", simText: "端に行くほど、中心に戻ろうとする加速度が大きくなります。" },
+            { name: "復元力", math: "$$F=-Kx$$", usage: "単振動の中心に引き戻す力。", reason: "変位に比例する逆向きの力が単振動の条件です。", animType: "harmonic_f", simText: "変位に比例した復元力が単振動を生み出します。" },
             { name: "周期（ばね・単振り子）", math: "$$T=2\\pi\\sqrt{\\frac{m}{K}}=2\\pi\\sqrt{\\frac{l}{g}}$$", usage: "1往復にかかる時間。", reason: "運動方程式からωを求めます。単振り子は質量に無関係です。", animType: "pendulum_t", simText: "糸の長さlだけで周期が決まります（振り子の等時性）。" }
         ]
     },
     "c8": {
         chap: "力学", title: "8 万有引力",
         formulas: [
-            { name: "ケプラーの法則", math: "$$\\frac{1}{2}rv\\sin\\theta=\\text{定数} \\quad \\frac{T^2}{a^3}=\\text{定数}$$", usage: "面積速度一定(第2)と、公転周期の法則(第3)。", reason: "中心力のみが働く運動の性質です。", animType: "kepler", simText: "太陽に近いほど速く、遠いほどゆっくり移動し、同じ時間で同じ面積を描きます。" },
+            { name: "ケプラーの法則", math: "$$\\frac{1}{2}rv\\sin\\theta=\\text{定数} \\quad \\frac{T^2}{a^3}=\\text{定数}$$", usage: "面積速度一定(第2)と、公転周期の法則(第3)。", reason: "中心力のみが働く運動の性質です。", animType: "kepler", simText: "太陽に近いほど速く、同じ時間で同じ面積（水色）を描きます。" },
             { name: "万有引力の法則", math: "$$F=G\\frac{m_1m_2}{r^2}$$", usage: "星同士などすべての物体が引き合う力。", reason: "質量に比例し、距離の2乗に反比例します。", animType: "gravity", simText: "星と星の間に、互いを引き寄せる万有引力（赤矢印）が働きます。" },
             { name: "万有引力による位置エネルギー", math: "$$U=-G\\frac{Mm}{r}$$", usage: "無限遠を基準(0)としたエネルギー。", reason: "引力に逆らって無限遠まで運ぶ仕事から導かれます。", animType: "orbit_u", simText: "地球から離れるほど、位置エネルギーは0に近づいて（増加して）いきます。" },
-            { name: "第一・第二宇宙速度", math: "$$v_1=\\sqrt{gR} \\quad v_2=\\sqrt{2gR}$$", usage: "地表スレスレを回る速度と、地球の引力を振り切る速度。", reason: "力のつり合いと、力学的エネルギー保存則から導出します。", animType: "escape", simText: "第二宇宙速度を超えると、地球の重力を振り切って宇宙へ飛び出します。" }
+            { name: "第一・第二宇宙速度", math: "$$v_1=\\sqrt{gR} \\quad v_2=\\sqrt{2gR}$$", usage: "地表スレスレを回る速度と、地球の引力を振り切る速度。", reason: "力のつり合いと、力学的エネルギー保存則から導出します。", animType: "escape", simText: "第二宇宙速度を超えると、重力を振り切って宇宙へ飛び出します。" }
         ]
     },
 
@@ -87,10 +87,10 @@ const physicsData = {
     "c9": {
         chap: "熱力学", title: "9 熱と温度",
         formulas: [
-            { name: "絶対温度", math: "$$T=t+273$$", usage: "セルシウス温度(℃)から絶対温度(K)へ。", reason: "分子運動が停止する絶対零度を0Kとします。", animType: "temp", simText: "温度（赤色）が高いほど分子の運動が激しくなります。" },
+            { name: "絶対温度", math: "$$T=t+273$$", usage: "セルシウス温度(℃)から絶対温度(K)へ。", reason: "分子運動が停止する絶対零度を0Kとします。", animType: "temp", simText: "温度が高いほど分子の運動が激しくなります。" },
             { name: "熱量・熱容量・比熱", math: "$$Q=C\\Delta T \\quad Q=mc\\Delta T$$", usage: "物質の温度を上げるのに必要なエネルギー。", reason: "Cは物体全体、c(比熱)は1gあたりの温まりにくさです。", animType: "heat", simText: "熱エネルギーを与えると、分子の振動が激しくなります。" },
-            { name: "熱量の保存", math: "$$Q_{\\text{失った}}=Q_{\\text{得た}}$$", usage: "高温と低温の物体を混ぜたときの最終温度。", reason: "外部に熱が逃げない限り、移動した熱の量は等しいです。", animType: "heat_mix", simText: "高温側(赤)から低温側(青)へ熱が移動し、やがて同じ温度になります。" },
-            { name: "潜熱", math: "$$Q=mL$$", usage: "状態変化に必要な熱量。", reason: "状態変化中は温度が上がらず、分子の結合を切るために熱が使われます。", animType: "latent", simText: "固体（整列）から液体（バラバラ）になる時など、結合を切るために熱を消費します。" }
+            { name: "熱量の保存", math: "$$Q_{\\text{失った}}=Q_{\\text{得た}}$$", usage: "高温と低温の物体を混ぜたときの最終温度。", reason: "外部に熱が逃げない限り、移動した熱の量は等しいです。", animType: "heat_mix", simText: "高温側から低温側へ熱が移動し、やがて同じ温度になります。" },
+            { name: "潜熱", math: "$$Q=mL$$", usage: "状態変化に必要な熱量。", reason: "状態変化中は温度が上がらず、分子の結合を切るために熱が使われます。", animType: "latent", simText: "固体から液体になる時など、結合を切るために熱を消費します。" }
         ]
     },
     "c10": {
@@ -101,7 +101,7 @@ const physicsData = {
             { name: "気体の分子運動論", math: "$$P=\\frac{Nmv^2}{3V} \\quad \\frac{1}{2}m\\overline{v^2}=\\frac{3}{2}kT$$", usage: "ミクロな分子の衝突からマクロな圧力・温度を導く時。", reason: "温度とは、気体分子の平均運動エネルギーそのものです。", animType: "kinetic", simText: "分子が壁にぶつかる衝撃の積み重ねが「圧力」になります。" },
             { name: "内部エネルギー", math: "$$U=\\frac{3}{2}nRT$$", usage: "単原子分子理想気体の持つ全エネルギー。", reason: "すべての分子の運動エネルギーの総和です。温度Tにのみ比例します。", animType: "internal_u", simText: "温度が高いほど、気体全体の内部エネルギーは大きいです。" },
             { name: "熱力学第一法則", math: "$$Q=\\Delta U+W$$", usage: "気体に熱を加えた時のエネルギー収支。", reason: "加えた熱は、温度上昇(ΔU)とピストンを押す仕事(W)に使われます。", animType: "piston", simText: "加えた熱で気体が膨張し、ピストンを押し上げて外部に仕事をします。" },
-            { name: "モル比熱", math: "$$C_V=\\frac{3}{2}R \\quad C_P=\\frac{5}{2}R \\quad C_P=C_V+R$$", usage: "定積・定圧変化で気体を温める時に必要な熱量。", reason: "定圧変化では仕事Wをする分、余計に熱が必要になります。", animType: "molar", simText: "体積を固定して温める(定積)か、膨張させながら温める(定圧)かの違いです。" },
+            { name: "モル比熱", math: "$$C_V=\\frac{3}{2}R \\quad C_P=\\frac{5}{2}R \\quad C_P=C_V+R$$", usage: "定積・定圧変化で気体を温める時に必要な熱量。", reason: "定圧変化では仕事Wをする分、余計に熱が必要になります。", animType: "molar", simText: "体積を固定して温めるか、膨張させながら温めるかの違いです。" },
             { name: "熱機関の熱効率", math: "$$e=\\frac{W}{Q_{\\text{in}}}=\\frac{Q_{\\text{in}}-Q_{\\text{out}}}{Q_{\\text{in}}}$$", usage: "エンジンの性能。", reason: "吸収した熱のうち、どれだけを仕事に変えられたかの割合です。", animType: "engine", simText: "吸収した熱の一部を仕事に変え、残りは外部へ捨てられます。" }
         ]
     },
@@ -111,9 +111,9 @@ const physicsData = {
         chap: "波動", title: "11 波の性質",
         formulas: [
             { name: "波の基本公式", math: "$$v=f\\lambda \\quad f=\\frac{1}{T}$$", usage: "波の速さ、振動数、波長の関係。", reason: "1周期(T)の間に1波長(λ)進むため。", animType: "wave", simText: "1回の振動で1波長（λ）進みます。" },
-            { name: "正弦波の式", math: "$$y=A\\sin2\\pi\\left(\\frac{t}{T}-\\frac{x}{\\lambda}\\right)$$", usage: "任意の位置x、時間tにおける媒質の変位y。", reason: "原点の振動が、時間 x/v だけ遅れて伝わることを表します。", animType: "wave_eq", simText: "媒質（青い点）は上下に揺れるだけで、波の形だけが右へ進みます。" },
+            { name: "正弦波の式", math: "$$y=A\\sin2\\pi\\left(\\frac{t}{T}-\\frac{x}{\\lambda}\\right)$$", usage: "任意の位置x、時間tにおける媒質の変位y。", reason: "原点の振動が、時間 x/v だけ遅れて伝わることを表します。", animType: "wave_eq", simText: "【sinの波形】媒質（点）は上下に揺れるだけで波形が右へ進みます。" },
             { name: "波の干渉条件", math: "$$|l_1-l_2|=m\\lambda \\quad \\left(m+\\frac{1}{2}\\right)\\lambda$$", usage: "2つの波源からの波が強め合う・弱め合う場所。", reason: "経路差が波長の整数倍なら山と山が重なります。", animType: "interfere", simText: "2つの波紋が重なり、大きく揺れる場所(赤)と揺れない場所ができます。" },
-            { name: "反射と屈折の法則", math: "$$\\frac{\\sin i}{\\sin r}=\\frac{v_1}{v_2}=\\frac{\\lambda_1}{\\lambda_2}=n_{12}$$", usage: "波が違う媒質へ進むときの曲がり方。", reason: "波の速さが変わるため、波面が曲がります。振動数は不変です。", animType: "refract", simText: "遅い媒質(下)に入ると波長が縮み、進行方向が曲がります（屈折）。" }
+            { name: "反射と屈折の法則", math: "$$\\frac{\\sin i}{\\sin r}=\\frac{v_1}{v_2}=\\frac{\\lambda_1}{\\lambda_2}=n_{12}$$", usage: "波が違う媒質へ進むときの曲がり方。", reason: "波の速さが変わるため、波面が曲がります。スネルの法則。", animType: "refract_sin", simText: "【sinの可視化】入射角iと屈折角rのsinの比が、速度の比になります。" }
         ]
     },
     "c12": {
@@ -128,7 +128,7 @@ const physicsData = {
     "c13": {
         chap: "波動", title: "13 光波と干渉",
         formulas: [
-            { name: "絶対屈折率", math: "$$n=\\frac{c}{v}$$", usage: "真空中に対する、その物質の光の進みにくさ。", reason: "光は真空中(c)が最速で、物質中では遅くなります。", animType: "refract", simText: "屈折率が大きいほど、光のスピードは遅く、波長は短くなります。" },
+            { name: "絶対屈折率", math: "$$n=\\frac{c}{v}$$", usage: "真空中に対する、その物質の光の進みにくさ。", reason: "光は真空中(c)が最速で、物質中では遅くなります。", animType: "refract_n", simText: "屈折率が大きいほど、光のスピードは遅く、波長は短くなります。" },
             { name: "全反射の臨界角", math: "$$\\sin i_0=\\frac{n_2}{n_1}$$", usage: "すべて反射してしまう限界の角度。", reason: "屈折角が90度になる条件です。", animType: "reflect_all", simText: "ある角度（臨界角）を超えると、光は外へ出られずすべて反射します。" },
             { name: "レンズの写像公式・倍率", math: "$$\\frac{1}{a}+\\frac{1}{b}=\\frac{1}{f} \\quad m=\\left|\\frac{b}{a}\\right|$$", usage: "像ができる位置と大きさ。", reason: "凸・凹、実像・虚像で符号が変わります。", animType: "lens", simText: "レンズを通った光が屈折し、焦点を経由して像を結びます。" },
             { name: "ヤングの実験", math: "$$d\\frac{x}{l}=m\\lambda \\quad \\Delta x=\\frac{l\\lambda}{d}$$", usage: "2つのスリットを通った光が作る縞模様の間隔。", reason: "経路差が d(x/l) で近似でき、これが波長λの整数倍で強め合います。", animType: "young", simText: "2つのスリットから出た光が干渉し、スクリーンに明暗の縞模様を作ります。" },
@@ -142,7 +142,7 @@ const physicsData = {
         chap: "電磁気", title: "14 電場と電位",
         formulas: [
             { name: "クーロンの法則", math: "$$F=k\\frac{q_1q_2}{r^2}$$", usage: "2つの電荷間の静電気力。", reason: "万有引力と同じく、距離の2乗に反比例します。", animType: "coulomb", simText: "同種は反発し、異種は引き合います。距離が近いほど力は強いです。" },
-            { name: "電場と受ける力", math: "$$E=k\\frac{Q}{r^2} \\quad F=qE$$", usage: "空間の電気的な力場と、電荷が受ける力。", reason: "電場Eは「+1Cが受ける力」。そこにqを置くとqEの力を受けます。", animType: "efield", simText: "＋電荷から周囲へ、電気力線（電場）が広がっています。" },
+            { name: "電場と受ける力", math: "$$E=k\\frac{Q}{r^2} \\quad F=qE$$", usage: "空間の電気的な力場と、電荷が受ける力。", reason: "電場Eは「+1Cが受ける力」。そこにqを置くとqEの力を受けます。", animType: "efield", simText: "＋電荷から周囲へ、電気力線（電場）が放射状に広がっています。" },
             { name: "電位", math: "$$V=k\\frac{Q}{r} \\quad U=qV$$", usage: "電気的な高さ（位置エネルギー）。", reason: "+1Cあたりの位置エネルギーが電位Vです。", animType: "potential", simText: "電荷の周りには、電位の「山」や「谷」ができます（等電位線）。" },
             { name: "一様電場と仕事", math: "$$V=Ed \\quad W=qV$$", usage: "平行極板間の電圧や、電荷を動かすエネルギー。", reason: "電場(傾き)×距離で電圧(高さ)になります。", animType: "efield_uniform", simText: "平行な極板の間には、どこでも同じ強さの真っ直ぐな電場ができます。" }
         ]
@@ -169,15 +169,15 @@ const physicsData = {
         formulas: [
             { name: "電流が作る磁場", math: "$$H=\\frac{I}{2\\pi r} \\quad H=\\frac{I}{2r} \\quad H=nI$$", usage: "直線、円形、ソレノイドコイルが作る磁場の強さ。", reason: "右ねじの法則で向きが決まります。", animType: "mag_field", simText: "電流の周りに、右ねじの向きに磁場（同心円）が発生します。" },
             { name: "磁束密度", math: "$$B=\\mu H$$", usage: "実際の磁力の強さの指標。", reason: "真空中や鉄心など、物質によって磁束の通りやすさ(μ)が違います。", animType: "mag_flux", simText: "透磁率の高い鉄心を入れると、磁力線が密集して強くなります。" },
-            { name: "電磁力", math: "$$F=IBl\\sin\\theta$$", usage: "磁場中の電流が受ける力（モーターの原理）。", reason: "フレミングの左手の法則です。", animType: "ampere", simText: "磁場を横切る電流は、フレミング左手の法則に従う力（赤矢印）を受けます。" },
-            { name: "ローレンツ力", math: "$$F=qvB\\sin\\theta$$", usage: "磁場中を飛ぶ単体の電荷が受ける力。", reason: "電流の受ける力のミクロ版です。常に進行方向に垂直に働きます。", animType: "lorentz", simText: "磁場中を飛ぶ電子はローレンツ力を受け、円運動をします。" },
+            { name: "電磁力", math: "$$F=IBl\\sin\\theta$$", usage: "磁場中の電流が受ける力（モーターの原理）。", reason: "フレミングの左手の法則です。", animType: "ampere", simText: "磁場を横切る電流は、フレミング左手の法則に従う力を受けます。" },
+            { name: "ローレンツ力", math: "$$F=qvB\\sin\\theta$$", usage: "磁場中を飛ぶ単体の電荷が受ける力。", reason: "進行方向と磁場に垂直に働きます。sinθは垂直成分の取り出しです。", animType: "lorentz_sin", simText: "【sinの可視化】速度vの磁場に垂直な成分(v sinθ)だけが力を受けます。" },
             { name: "円運動の半径", math: "$$r=\\frac{mv}{qB}$$", usage: "磁場に垂直に入射した電子の軌道。", reason: "向心力(mv²/r)＝ローレンツ力(qvB)のつり合いから。", animType: "lorentz_r", simText: "速くて重いほど大回りになり、磁場が強いほど小回りになります。" }
         ]
     },
     "c18": {
         chap: "電磁気", title: "18 電磁誘導",
         formulas: [
-            { name: "磁束", math: "$$\\Phi=BS\\cos\\theta$$", usage: "面を貫く磁力線の総本数。", reason: "磁束密度と面積の積です。", animType: "flux", simText: "コイルの輪を貫く磁力線の数（束）が「磁束」です。" },
+            { name: "磁束", math: "$$\\Phi=BS\\cos\\theta$$", usage: "面を貫く磁力線の総本数。", reason: "垂直な成分(Bcosθ)を取り出し、面積Sをかけます。", animType: "flux_cos", simText: "【cosの可視化】面に対して垂直な成分(Bcosθ)だけが磁束としてカウントされます。" },
             { name: "ファラデーの電磁誘導の法則", math: "$$V=-N\\frac{\\Delta\\Phi}{\\Delta t}$$", usage: "コイルを貫く磁束が変化した時の電圧。", reason: "マイナスは「変化を打ち消す向き」を意味します。", animType: "induction", simText: "磁石を近づけると、コイルがそれを邪魔する向きに磁場（電流）を作ります。" },
             { name: "導体棒の誘導起電力", math: "$$V=vBl$$", usage: "磁場を横切る金属棒に生じる電圧。", reason: "中の自由電子がローレンツ力を受けて偏るためです。", animType: "rod", simText: "磁場を横切る棒の中の電子が力を受け、棒の上下が電池の＋－になります。" },
             { name: "自己誘導とエネルギー", math: "$$V=-L\\frac{\\Delta I}{\\Delta t} \\quad U=\\frac{1}{2}LI^2$$", usage: "自分の電流変化で自分に逆起電力を生む現象。", reason: "コイルは電流の変化を嫌う性質(L)を持ちます。", animType: "self_ind", simText: "コイルは電流が急に増えるのも減るのも嫌がって、逆起電力を生みます。" }
@@ -186,7 +186,7 @@ const physicsData = {
     "c19": {
         chap: "電磁気", title: "19 交流と電磁波",
         formulas: [
-            { name: "交流電圧と実効値", math: "$$V=V_0\\sin\\omega t \\quad V_e=\\frac{V_0}{\\sqrt{2}}$$", usage: "コンセントの電圧と、直流換算の平均値。", reason: "コイルの回転により発生するためサインカーブになります。", animType: "ac_gen", simText: "発電機の中でコイルが回転することで、波のような電圧が生まれます。" },
+            { name: "交流電圧と実効値", math: "$$V=V_0\\sin\\omega t \\quad V_e=\\frac{V_0}{\\sqrt{2}}$$", usage: "コンセントの電圧と、直流換算の平均値。", reason: "コイルの回転により発生するためサインカーブになります。", animType: "ac_gen", simText: "【sinの可視化】磁場中でコイルが回転する縦成分がそのまま電圧のサイン波になります。" },
             { name: "リアクタンス", math: "$$X_L=\\omega L \\quad X_C=\\frac{1}{\\omega C}$$", usage: "コイルとコンデンサーの交流に対する抵抗。", reason: "コイルは高周波を通しにくく、コンデンサーは通しやすいです。", animType: "reactance", simText: "周波数によって、コイルとコンデンサーの電流の通しやすさが変わります。" },
             { name: "インピーダンス", math: "$$Z=\\sqrt{R^2+\\left(\\omega L-\\frac{1}{\\omega C}\\right)^2}$$", usage: "RLC直列回路の全体の抵抗値。", reason: "電圧と電流の位相のズレを三平方の定理で合成します。", animType: "impedance", simText: "ベクトル図。抵抗・コイル・コンデンサーを合わせた全体の抵抗値です。" },
             { name: "共振周波数", math: "$$f_0=\\frac{1}{2\\pi\\sqrt{LC}}$$", usage: "回路に最も電流が流れやすくなる周波数。", reason: "ωL = 1/ωC となり、リアクタンスが打ち消し合う条件です。", animType: "resonance", simText: "特定の周波数の時だけ、コイルとコンデンサーの抵抗が打ち消し合います。" }
