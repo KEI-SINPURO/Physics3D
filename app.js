@@ -1,5 +1,5 @@
 // ==========================================
-// 高校物理 2Dシミュレーションエンジン (第1回 力学編・オリジナルデザイン版)
+// 高校物理 2Dシミュレーションエンジン (第1回 力学編・修正版)
 // ==========================================
 
 const menuList = document.getElementById('menu-list');
@@ -84,7 +84,7 @@ if(playBtn) playBtn.onclick = () => { isPlaying = !isPlaying; playBtn.innerText 
 const resetBtn = document.getElementById('resetBtn');
 if(resetBtn) resetBtn.onclick = () => setAnimation(animType);
 
-// --- シンプルな描画補助関数（元のデザインに寄せる） ---
+// --- 描画補助関数 ---
 function drawArrow(x, y, dx, dy, color, label) {
     const headlen = 10;
     const angle = Math.atan2(dy, dx);
@@ -140,25 +140,20 @@ function render() {
         // 1. 等加速度直線運動 / 等速直線運動
         // ----------------------------------------------------
         if (animType.includes("linear") || animType.includes("accel")) {
-            let a = animType.includes("linear") ? 0 : 20; // 加速度
-            let v0 = 40; // 初速度
+            let a = animType.includes("linear") ? 0 : 20; 
+            let v0 = 40; 
             let x = -200 + v0*time + 0.5*a*time*time; 
             let v = v0 + a*time;
-            if(x > 250) time = 0; // ループ
+            if(x > 250) time = 0; 
             
-            // 物体
             ctx.fillStyle = '#4CAF50';
             ctx.fillRect(x - 20, 10, 40, 40);
-            drawText("m", x - 8, 35, "#fff"); // 質量mを追加
+            drawText("m", x - 8, 35, "#fff"); 
             
-            // 速度ベクトル v
             drawArrow(x, 0, v, 0, "blue", "v");
-            
-            // 加速度ベクトル a
             if(a > 0) {
                 drawArrow(x, -30, a*2, 0, "red", "a");
             }
-            // 変位 x
             drawArrow(-200, 70, (x + 200), 0, "purple", "x");
         }
         // ----------------------------------------------------
@@ -167,85 +162,83 @@ function render() {
         else if (animType.includes("fall") || animType.includes("throw")) {
             let startY = animType.includes("throw") && !animType.includes("down") ? 50 : -150;
             let v0y = 0, g = 50;
-            if(animType.includes("fall_v0")) v0y = 50; // 投げ下ろし
-            if(animType.includes("throw") && !animType.includes("down")) v0y = -120; // 投げ上げ
+            if(animType.includes("fall_v0")) v0y = 50; 
+            if(animType.includes("throw") && !animType.includes("down")) v0y = -120; 
             
             let cy = startY + v0y*time + 0.5*g*time*time; 
             let cvy = v0y + g*time;
             if(cy > 150) time=0;
 
-            // 物体
             ctx.fillStyle = '#FF5722';
             ctx.beginPath();
             ctx.arc(0, cy, 15, 0, Math.PI*2);
             ctx.fill();
             drawText("m", -7, cy + 5, "#fff");
 
-            // 速度ベクトル v と 重力加速度 g
             drawArrow(20, cy, 0, cvy * 0.5, "blue", "v"); 
             drawArrow(-30, cy, 0, g * 0.8, "red", "g");
 
-            // 初速度 v0 (最初の少しの間だけ表示)
             if(v0y !== 0 && time < 0.5) {
                 drawArrow(0, startY, 0, v0y * 0.5, "orange", "v₀");
             }
         }
         // ----------------------------------------------------
-        // 3. 仕事 (W = Fx cosθ)
+        // 3. 仕事
         // ----------------------------------------------------
         else if (animType.includes("work")) {
             let x = -100 + time*30; 
             if(x > 150) time=0;
 
-            // 物体
             ctx.fillStyle = '#00BCD4';
             ctx.fillRect(x - 25, 10, 50, 40);
             drawText("m", x - 8, 35, "#fff");
 
-            // 力 F と 角度 θ
             drawArrow(x, 10, 80, -40, "red", "F");
             drawText("θ", x + 30, 5, "black");
 
-            // 移動距離 x
             drawArrow(-100, 70, (x + 100), 0, "purple", "x");
         }
         // ----------------------------------------------------
-        // 4. 運動量と力積 (momentum / collision) ※モーメントと分離
+        // 4. 運動量と力積 (momentum / collision) ※修正済み
         // ----------------------------------------------------
         else if (animType === "momentum" || animType.includes("collision") || animType.includes("impulse")) {
             let t2 = time % 4;
-            let isCollided = t2 >= 2.0;
-
-            let x1 = isCollided ? -20 - (t2-2)*40 : -150 + t2*65; 
-            let x2 = isCollided ? 20 + (t2-2)*80 : 20; 
+            let x1, x2, v1, v2;
             
+            // 等質量・完全弾性衝突の正しい動き
+            if (t2 < 2.0) {
+                x1 = -150 + 60 * t2; // m1が右へ進む
+                x2 = 10;             // m2は静止
+                v1 = 60;
+                v2 = 0;
+            } else {
+                x1 = -30;            // m1は衝突して静止
+                x2 = 10 + 60 * (t2 - 2.0); // m2が速度を受け継ぎ右へ進む
+                v1 = 0;
+                v2 = 60;
+            }
+
             // 物体1
             ctx.fillStyle = '#2196F3';
             ctx.beginPath(); ctx.arc(x1, 30, 20, 0, Math.PI*2); ctx.fill();
-            drawText("m₁", x1 - 10, 35, "#fff");
-            drawArrow(x1, 0, isCollided ? -30 : 60, 0, "blue", isCollided ? "v₁'" : "v₁");
+            drawText("m₁", x1 - 12, 35, "#fff");
+            if (v1 > 0) drawArrow(x1, 0, v1, 0, "blue", "v₁");
 
             // 物体2
             ctx.fillStyle = '#E91E63';
             ctx.beginPath(); ctx.arc(x2, 30, 20, 0, Math.PI*2); ctx.fill();
-            drawText("m₂", x2 - 10, 35, "#fff");
-            if(isCollided) {
-                drawArrow(x2, 0, 80, 0, "red", "v₂'");
-            } else {
-                drawText("v₂=0", x2 - 15, -10, "red");
-            }
+            drawText("m₂", x2 - 12, 35, "#fff");
+            if (v2 > 0) drawArrow(x2, 0, v2, 0, "red", "v₂'");
         }
         // ----------------------------------------------------
-        // 5. 力のモーメント (moment) ※運動量と分離
+        // 5. 力のモーメント (moment)
         // ----------------------------------------------------
         else if (animType === "moment" || animType.includes("balance")) {
-            // 支点
             ctx.fillStyle = '#795548';
             ctx.beginPath();
             ctx.moveTo(0, 50); ctx.lineTo(-20, 90); ctx.lineTo(20, 90);
             ctx.fill();
 
-            // 棒 (少し揺らす)
             let angle = Math.sin(time) * 0.1;
             ctx.save();
             ctx.translate(0, 50);
@@ -254,11 +247,9 @@ function render() {
             ctx.fillStyle = '#FFC107';
             ctx.fillRect(-120, -5, 240, 10);
 
-            // 左の力
             drawArrow(-80, 0, 0, 60, "red", "F₁");
             drawArrow(0, -20, -80, 0, "green", "l₁");
 
-            // 右の力
             drawArrow(80, 0, 0, 60, "red", "F₂");
             drawArrow(0, -20, 80, 0, "green", "l₂");
 
