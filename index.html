@@ -2,52 +2,50 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>究極網羅版 2D物理シミュレーションエンジン (高校物理全範囲 79公式)</title>
-    
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
-
+    <title>高校物理 2Dシミュレーションエンジン</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
-        /* ==========================================================================
-           洗練されたモダンUI スタイルシート (CSS)
-           ========================================================================== */
         body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
             margin: 0;
             padding: 0;
-            font-family: 'Helvetica Neue', Arial, 'Hiragino Sans', sans-serif;
+            background-color: #f5f7fa;
+            color: #2c3e50;
             display: flex;
             height: 100vh;
-            background: #f5f7fa;
-            color: #2c3e50;
             overflow: hidden;
         }
-
-        /* 左側：章・節メニューサイドバー */
+        /* サイドバー（メニュー） */
         #sidebar {
             width: 320px;
-            background: #2c3e50;
-            color: #fff;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            border-right: 1px solid #1a252f;
-            height: 100%;
+            border-right: 1px solid #34495e;
             overflow-y: auto;
-            flex-shrink: 0;
+        }
+        .sidebar-title {
+            font-size: 1.3rem;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #fff;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            text-align: center;
         }
         .chapter-group {
-            margin-bottom: 2px;
+            margin-bottom: 20px;
         }
         .chapter-title {
-            background: #1a252f;
-            padding: 14px 18px;
-            font-size: 13px;
             font-weight: bold;
-            color: #3498db;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            border-bottom: 1px solid #2c3e50;
-            letter-spacing: 0.5px;
+            font-size: 1.05rem;
+            color: #bdc3c7;
+            border-bottom: 1px solid #34495e;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
         }
         .chapter-list {
             list-style: none;
@@ -55,1116 +53,1194 @@
             margin: 0;
         }
         .chapter-list .item {
-            padding: 12px 22px;
-            font-size: 13px;
+            padding: 10px;
             cursor: pointer;
-            border-bottom: 1px solid #34495e;
-            color: #bdc3c7;
-            transition: all 0.2s ease;
-            line-height: 1.4;
+            border-radius: 4px;
+            transition: background 0.2s, color 0.2s;
+            margin-bottom: 5px;
+            font-size: 0.95rem;
         }
         .chapter-list .item:hover {
-            background: #34495e;
+            background-color: #34495e;
             color: #fff;
         }
         .chapter-list .item.active {
-            background: #3498db;
+            background-color: #3498db;
             color: #fff;
             font-weight: bold;
-            border-left: 4px solid #2980b9;
         }
-
-        /* 右側メインエリア */
+        
+        /* メインコンテンツエリア */
         #main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
             height: 100%;
-            overflow: hidden;
-        }
-        #header {
-            background: #fff;
-            padding: 15px 25px;
-            border-bottom: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-        }
-        #header h2 {
-            margin: 0;
-            font-size: 18px;
-            color: #1a202c;
-        }
-
-        /* ワークスペース（2カラム構成） */
-        #workspace {
-            flex: 1;
-            display: flex;
-            overflow: hidden;
+            box-sizing: border-box;
             padding: 20px;
-            gap: 20px;
+            overflow: hidden;
         }
-
-        /* ワークスペース内・左：公式解説カード群 */
-        #left-panel {
-            flex: 4;
+        #top-bar {
+            margin-bottom: 15px;
+            flex-shrink: 0;
+        }
+        #unit-title {
+            margin: 0;
+            font-size: 1.6rem;
+            color: #2c3e50;
+            border-left: 5px solid #3498db;
+            padding-left: 10px;
+        }
+        
+        /* ワークスペース（左右分割） */
+        #workspace {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+            min-height: 0; /* スクロール崩れ防止 */
+        }
+        #left-pane {
+            flex: 1.3;
             display: flex;
             flex-direction: column;
             gap: 15px;
-            overflow-y: auto;
-            max-width: 450px;
-            min-width: 350px;
-            padding-right: 5px;
-        }
-        .formula-card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 18px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-        }
-        .formula-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-            border-color: #cbd5e0;
-        }
-        .formula-card.active {
-            border: 2px solid #3498db;
-            box-shadow: 0 4px 12px rgba(52,152,219,0.15);
-            background: #fcfdfd;
-        }
-        .formula-card h3 {
-            margin: 0 0 12px 0;
-            font-size: 15px;
-            color: #2b6cb0;
-            border-left: 3px solid #3498db;
-            padding-left: 8px;
-        }
-        .math-box {
-            background: #f7fafc;
-            padding: 14px;
-            border-radius: 6px;
-            text-align: center;
-            margin-bottom: 14px;
-            font-size: 15px;
-            border: 1px solid #edf2f7;
-            overflow-x: auto;
-        }
-        .desc-section {
-            font-size: 12px;
-            margin-bottom: 10px;
-            line-height: 1.5;
-            color: #4a5568;
-        }
-        .desc-section strong {
-            color: #2d3748;
-            display: inline-block;
-            margin-bottom: 3px;
-        }
-
-        /* ワークスペース内・右：シミュレータキャンバス＆操作 */
-        #right-panel {
-            flex: 6;
-            display: flex;
-            flex-direction: column;
-            background: #fff;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-        }
-        #sim-desc {
-            padding: 14px 20px;
-            background: #ebf8ff;
-            border-bottom: 1px solid #bee3f8;
-            color: #2b6cb0;
-            font-size: 13px;
-            font-weight: 500;
-            line-height: 1.5;
+            height: 100%;
         }
         #canvas-container {
             flex: 1;
-            position: relative;
-            background: #fafafa;
+            background-color: #fff;
+            border: 1px solid #dcdde1;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             overflow: hidden;
+            position: relative;
         }
         #sim-canvas {
             width: 100%;
             height: 100%;
             display: block;
-            cursor: grab;
         }
-        #sim-canvas:active {
-            cursor: grabbing;
-        }
-
-        /* 下部操作パネル */
-        #control-panel {
-            padding: 16px 20px;
-            background: #f7fafc;
-            border-top: 1px solid #e2e8f0;
+        
+        /* コントロールパネル */
+        #controls {
+            background-color: #fff;
+            border: 1px solid #dcdde1;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             display: flex;
             flex-wrap: wrap;
+            gap: 20px;
             align-items: center;
-            gap: 25px;
-        }
-        .btn {
-            background: #3498db;
-            color: #fff;
-            border: none;
-            padding: 9px 18px;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s ease;
-            font-size: 13px;
-            display: inline-flex;
-            align-items: center;
-        }
-        .btn:hover {
-            background: #2980b9;
-        }
-        .btn-reset {
-            background: #e74c3c;
-        }
-        .btn-reset:hover {
-            background: #c0392b;
+            flex-shrink: 0;
         }
         .control-group {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 12px;
-            color: #4a5568;
-            font-weight: 500;
+            font-size: 0.9rem;
         }
-        .control-group input[type="range"] {
-            width: 110px;
+        .control-group label {
+            font-weight: bold;
+            color: #34495e;
+        }
+        button {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            border: none;
+            border-radius: 4px;
             cursor: pointer;
-            accent-color: #3498db;
+            transition: background 0.2s;
+            font-weight: bold;
         }
-        .control-group span {
-            min-width: 45px;
-            text-align: right;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 13px;
-            color: #1a202c;
+        #playBtn {
+            background-color: #2ecc71;
+            color: white;
         }
-        .hint-text {
-            font-size: 11px;
-            color: #a0aec0;
-            margin-left: auto;
+        #playBtn:hover {
+            background-color: #27ae60;
+        }
+        #resetBtn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        #resetBtn:hover {
+            background-color: #c0392b;
+        }
+        
+        /* 右側ペイン（公式情報と解説） */
+        #right-pane {
+            flex: 0.9;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            padding-right: 5px;
+            height: 100%;
+        }
+        #sim-desc-container {
+            background-color: #fff;
+            border: 1px solid #dcdde1;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+        }
+        #sim-desc-container h4 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            color: #2c3e50;
+            border-left: 4px solid #e67e22;
+            padding-left: 8px;
+        }
+        #sim-desc {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #57606f;
+        }
+        #formula-cards-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .formula-card {
+            background-color: #fff;
+            border: 1px solid #dcdde1;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+        }
+        .formula-card:hover {
+            border-color: #3498db;
+            box-shadow: 0 6px 12px rgba(52,152,219,0.1);
+        }
+        .formula-card.active {
+            border-color: #e74c3c;
+            border-width: 2px;
+            background-color: #fffdf9;
+        }
+        .formula-card h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            color: #c0392b;
+        }
+        .math-box {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 12px;
+            text-align: center;
+            overflow-x: auto;
+            border-left: 4px solid #bdc3c7;
+        }
+        .desc-section {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+        .desc-section strong {
+            color: #2c3e50;
+            display: inline-block;
+            margin-bottom: 2px;
         }
     </style>
 </head>
 <body>
 
     <div id="sidebar">
+        <div class="sidebar-title">物理シミュレーター</div>
         <div id="menu-list"></div>
     </div>
-
+    
     <div id="main-content">
-        <div id="header">
-            <h2 id="unit-title">章を選択してください</h2>
+        <div id="top-bar">
+            <h1 id="unit-title">単元タイトル</h1>
         </div>
         
         <div id="workspace">
-            <div id="left-panel">
-                <div id="formula-cards-container"></div>
-            </div>
-            
-            <div id="right-panel">
-                <div id="sim-desc">公式カードを選択すると、対応するアニメーションが表示されます。</div>
+            <div id="left-pane">
                 <div id="canvas-container">
                     <canvas id="sim-canvas"></canvas>
                 </div>
-                <div id="control-panel">
-                    <button id="playBtn" class="btn">⏸ 一時停止</button>
-                    <button id="resetBtn" class="btn btn-reset">🔄 リセット</button>
-                    
+                <div id="controls">
+                    <button id="playBtn">⏸ 一時停止</button>
+                    <button id="resetBtn">🔄 リセット</button>
                     <div class="control-group">
-                        <label for="speedSlider">時間速度:</label>
-                        <input type="range" id="speedSlider" min="0.1" max="2.5" step="0.1" value="1.0">
+                        <label for="speedSlider">速度:</label>
+                        <input type="range" id="speedSlider" min="0.1" max="3.0" step="0.1" value="1.0">
                         <span id="speedVal">1.00x</span>
                     </div>
-                    
                     <div class="control-group">
                         <label for="zoomSlider">ズーム:</label>
-                        <input type="range" id="zoomSlider" min="0.4" max="3.0" step="0.1" value="1.0">
+                        <input type="range" id="zoomSlider" min="0.5" max="3.0" step="0.1" value="1.0">
                         <span id="zoomVal">1.0x</span>
                     </div>
-                    
-                    <div class="hint-text">💡 ドラッグで画面移動、ホイールで拡大縮小可能</div>
                 </div>
+            </div>
+            
+            <div id="right-pane">
+                <div id="sim-desc-container">
+                    <h4>シミュレーション解説</h4>
+                    <div id="sim-desc">公式カードを選択するとここにシミュレーションの説明が表示されます。</div>
+                </div>
+                <div id="formula-cards-container"></div>
             </div>
         </div>
     </div>
 
     <script>
-    // ----------------------------------------------------
-    // 【データ層】高校物理全範囲・全79公式 完全網羅オブジェクト
-    // ----------------------------------------------------
-    const physicsData = {
-        "linear_motion": {
-            "chap": "第1章 力学：直線運動・落体",
-            "title": "1. 直線運動と落体運動の数式",
-            "formulas": [
-                { "name": "等速直線運動の変位", "math": "\\[x = v_0 t\\]", "usage": "物体が一定の速度で移動し続けるとき", "reason": "速度に時間をかけると移動距離（変位）になります。", "simText": "物体が等速で右に移動します。緑の矢印は変位 x を表します。", "animType": "linear_constant_v" },
-                { "name": "等加速度運動の速度", "math": "\\[v = v_0 + at\\]", "usage": "一定の加速（または減速）がある運動の速度を求めるとき", "reason": "初期速度に、加速した分（加速度×時間）を足し合わせます。", "simText": "物体が加速しながら移動します。緑が加速度 a、青が速度 v です。", "animType": "linear_accel_v" },
-                { "name": "等加速度運動の変位", "math": "\\[x = v_0 t + \\frac{1}{2}at^2\\]", "usage": "一定の加速を行う物体の、移動した距離を知りたいとき", "reason": "初速度による進み分と、加速によって余計に進んだ分を合計します。", "simText": "時間の経過とともに変位 x が二次関数的に一気に広がる様子を表示します。", "animType": "linear_accel_x" },
-                { "name": "速度と変位の関係式", "math": "\\[v^2 - v_0^2 = 2ax\\]", "usage": "問題に時間 t が与えられていない、または求める必要がないとき", "reason": "運動方程式と等加速度の式から時間 t を消去して導かれます。", "simText": "時間経過に左右されない、位置 x と各点での速度 v の関係性です。", "animType": "linear_accel_v2" },
-                { "name": "相対速度", "math": "\\[v_{AB} = v_B - v_A\\]", "usage": "動いている観測者Aから、別の動く物体Bを見たときの速度", "reason": "相手の速度から自分の速度を引くことで、自分基準の動きになります。", "simText": "Aから見たBの速度 v_AB を紫のベクトルとしてリアルタイム算出します。", "animType": "relative_velocity" },
-                { "name": "自由落下", "math": "\\[v = gt ,\\quad y = \\frac{1}{2}gt^2\\]", "usage": "物体を静かに（初速ゼロで）下へ落としたとき", "reason": "重力加速度 g のみによって、下向きにどんどん加速していきます。", "simText": "重力によって落下します。落下距離 y と速度 v の連動です。", "animType": "free_fall_y" },
-                { "name": "鉛直投げ下ろし", "math": "\\[v = v_0 + gt ,\\quad y = v_0 t + \\frac{1}{2}gt^2\\]", "usage": "下向きに最初から速度（初速）を与えて落とすとき", "reason": "最初に与えた初速度の勢いに、重力による加速分が順次足されます。", "simText": "下方向への初速 v_0 があるため、自由落下より早く地面へ到達します。", "animType": "vertical_throw_down" },
-                { "name": "鉛直投げ上げ", "math": "\\[v = v_0 - gt ,\\quad y = v_0 t - \\frac{1}{2}gt^2\\]", "usage": "物体を真上に向けて放り投げるとき", "reason": "進む向きと逆に重力が働くため、最高点（v=0）に達した後に落下します。", "simText": "最高点で速度 v=0 となり、y が最大値に。その後自由落下に転じます。", "animType": "vertical_throw_up" },
-                { "name": "水平投射", "math": "\\[x = v_0 t ,\\quad y = \\frac{1}{2}gt^2\\]", "usage": "崖の上などから真横（水平）に物体を投げ出したとき", "reason": "横には等速運動、縦には自由落下を行う2つの運動の合成です。", "simText": "軌跡は放物線になります。水平速度 v_x と鉛直速度 v_y に成分分解されます。", "animType": "horizontal_projectile" },
-                { "name": "斜方投射", "math": "\\[x = (v_0 \\cos\\theta)t ,\\quad y = (v_0 \\sin\\theta)t - \\frac{1}{2}gt^2\\]", "usage": "地面から斜め上に向けて物体を投げ上げるとき", "reason": "初速を角度θで分解し、横は等速運動、縦は投げ上げ運動を行います。", "simText": "任意の角度 θ で放り出された物体の全軌跡と各速度ベクトルを描きます。", "animType": "oblique_projectile" }
-            ]
-        },
-        "forces_and_momentum": {
-            "chap": "第2章 力学：力・摩擦・モーメント",
-            "title": "2. 力のつり合い、運動量、仕事",
-            "formulas": [
-                { "name": "フックの法則", "math": "\\[F = kx\\]", "usage": "ばねが縮んだり伸びたりしたときの弾性力を求めるとき", "reason": "ばねの変形量 x に比例した大きさの復元力 F が発生します。", "simText": "ばねの変位 x の大きさと、引き戻そうとする力 F の比例関係です。", "animType": "hookes_law" },
-                { "name": "最大静止摩擦力", "math": "\\[f \\le \\mu N\\]", "usage": "静止している物体が動き出す「限界の瞬間」を計算するとき", "reason": "垂直抗力 N と静止摩擦係数 μ の積が、耐えられる摩擦の限界値です。", "simText": "引っ張る外力 F を大きくしていくと、限界値 μN に達した瞬間に滑ります。", "animType": "static_friction" },
-                { "name": "動摩擦力", "math": "\\[f' = \\mu' N\\]", "usage": "すでに床の上を滑って動いている物体に働く摩擦を求めるとき", "reason": "滑っている間は、物体の移動速度によらず常に一定の動摩擦力が働きます。", "simText": "運動中の物体に対して、運動を妨げる逆向きの動摩擦力 f' がかかります。", "animType": "kinetic_friction" },
-                { "name": "浮力（アルキメデスの原理）", "math": "\\[F = \\rho V g\\]", "usage": "水や空気の中に浮かぶ物体が受ける上向きの力を求めるとき", "reason": "物体が押ししのけた流体の体積分の質量にかかる重力と同じ力が浮力です。", "simText": "流体中の体積 V に応じて発生する上向きの浮力 F と重力 mg のつり合いです。", "animType": "buoyancy_archimedes" },
-                { "name": "力のモーメント", "math": "\\[M = F l\\]", "usage": "ボルトを回す、てこを傾けるなど物体の回転効果を考えるとき", "reason": "回転の中心からの距離（腕の長さ） l と、垂直な力 F の積で回転力が決まる。", "simText": "支点周りの回転モーメント M の釣り合い（てこの原理）を再現します。", "animType": "torque_moment" },
-                { "name": "重心の位置", "math": "\\[x_G = \\frac{m_1 x_1 + m_2 x_2}{m_1 + m_2}\\]", "usage": "大きさのある物体のバランス点や、複数物体の重心を求めるとき", "reason": "各物体の位置を、それぞれの質量で重み付け平均した位置が重心です。", "simText": "2つの物体の質量比（m_1, m_2）と、その釣り合い中心点 x_G の位置です。", "animType": "center_of_mass" },
-                { "name": "運動量保存則", "math": "\\[m_1 v_1 + m_2 v_2 = m_1 v_1' + m_2 v_2'\\]", "usage": "物体の衝突、合体、分裂などの前後での速度変化を追うとき", "reason": "外から力が加わらない内力のみの相互作用では、運動量の総和は不変です。", "simText": "衝突前後で全体の運動量 P の合計バーの長さが絶対に狂わないことを示します。", "animType": "momentum_conservation" },
-                { "name": "反発係数（はね返り係数）", "math": "\\[e = -\\frac{v_2' - v_1'}{v_2 - v_1}\\]", "usage": "衝突した2物体が、どれくらいの勢いではね返るか計算するとき", "reason": "衝突前後の近づく相対速度と、離れる相対速度の比率（0〜1）を表します。", "simText": "床との衝突時、衝突速度 v が反発係数 e によって e倍の速度 v' に減速反射します。", "animType": "restitution_coefficient" },
-                { "name": "運動量と力積の関係", "math": "\\[m v' - m v = F \\Delta t\\]", "usage": "物体に一定時間力を加えた結果、速度がどう変わるか調べるとき", "reason": "加えた力積（力 F × 時間 Δt）の分だけ、物体の運動量が変化します。", "simText": "壁に衝突する瞬間に強い力積 FΔt を受けて、運動量が急変する様子です。", "animType": "impulse_momentum" },
-                { "name": "仕事の定義", "math": "\\[W = F x \\cos\\theta\\]", "usage": "力が物体に対して与えた、または奪ったエネルギー量を求めるとき", "reason": "加えた力のうち、物体が移動した方向の成分（F cosθ）に距離を掛けます。", "simText": "斜め上に引く力 F のうち、水平成分 F cosθ のみが仕事 W を生み出します。", "animType": "work_definition" }
-            ]
-        },
-        "energy_and_oscillation": {
-            "chap": "第3章 力学：エネルギー・円運動・振動",
-            "title": "3. エネルギー、円運動、天体、単振動",
-            "formulas": [
-                { "name": "運動エネルギーと仕事", "math": "\\[\\frac{1}{2}mv^2 - \\frac{1}{2}mv_0^2 = W\\]", "usage": "された仕事によって、物体のスピードがどう変わるか解くとき", "reason": "物体が外から仕事 W を受けると、その分だけ運動エネルギーが変化します。", "simText": "加えた仕事 W の累積に応じて、物体の速度 v が2乗比例で増速します。", "animType": "kinetic_energy" },
-                { "name": "重力による位置エネルギー", "math": "\\[U = mgh\\]", "usage": "高いところにある物体が持つ、潜在的なエネルギーを計算するとき", "reason": "基準面から高さ h まで、重力に抗して持ち上げるのに必要な仕事に等しい。", "simText": "高さ h に応じて位置エネルギー U が蓄えられます。m, g は一定です。", "animType": "potential_energy_g" },
-                { "name": "弾性力による位置エネルギー", "math": "\\[U = \\frac{1}{2}kx^2\\]", "usage": "引き伸ばされた、または押し縮められたばねが持つエネルギー", "reason": "ばねを x 変形させる間に、変化するフックの力を積分した仕事です。", "simText": "ばねの変位 x に伴い、二次関数曲線を描いてエネルギー U が急増します。", "animType": "potential_energy_e" },
-                { "name": "力学的エネルギー保存則", "math": "\\[E = \\frac{1}{2}mv^2 + mgh = \\text{一定}\\]", "usage": "摩擦や空気抵抗がない状態で、物体の高さと速度の関係を追うとき", "reason": "位置エネルギーと運動エネルギーは、互いに姿を変えるだけで総量は不変です。", "simText": "振り子運動で位置エネルギー U と運動エネルギー K の合計 E が常時一定のメーターを示します。", "animType": "mechanical_energy_conservation" },
-                { "name": "等速円運動の速度と加速度", "math": "\\[v = r\\omega ,\\quad a = r\\omega^2\\]", "usage": "円軌道を一定の速さで回る物体の、速度や加速力を調べるとき", "reason": "半径 r と回転角速度 ω から、接線速度と中心を向く向心加速度が定まります。", "simText": "青矢印が接線速度 v、緑矢印が常に中心を向く向心加速度 a を表します。", "animType": "circular_motion_v" },
-                { "name": "向心力", "math": "\\[F = m\\frac{v^2}{r} = mr\\omega^2\\]", "usage": "物体に円運動を行わせるために必要な「中心向きの力」を求める際", "reason": "速度の「向き」を常に中心方向へ曲げ続けるために必要な運動方程式の力です。", "simText": "おもりが円運動を維持するために必要な中心向きの張力・紐の力 F を描きます。", "animType": "centripetal_force" },
-                { "name": "単振動の変位", "math": "\\[x = A \\sin(\\omega t)\\]", "usage": "往復運動（単振動）を行う物体の、各時刻の位置を知りたいとき", "reason": "等速円運動を真横からスクリーンに投影した動きと完全に一致します。", "simText": "単振動の変位 x の時間推移を、右側にリアルタイムな正弦波形グラフとして展開します。", "animType": "shm_displacement" },
-                { "name": "ばね振り子の周期", "math": "\\[T = 2\\pi \\sqrt{\\frac{m}{k}}\\]", "usage": "ばねにつるされたおもりが1往復する時間を計算するとき", "reason": "質量 m が重いほど慣性で遅くなり、ばね定数 k が強いほど引き戻しが早く周期が短くなる。", "simText": "質量 m とばね定数 k から厳密に計算された周期 T で往復運動します。", "animType": "spring_pendulum" },
-                { "name": "単振り子の周期", "math": "\\[T = 2\\pi \\sqrt{\\frac{L}{g}}\\]", "usage": "ひもで吊るされたおもりの往復時間を求めるとき", "reason": "微小振動では、周期はおもりの重さに依存せず、ひもの長さ L と重力 g のみで決まる。", "simText": "ひもの長さ L の平方根に比例して、往復に要する周期 T が変化します。", "animType": "simple_pendulum" },
-                { "name": "万有引力の法則", "math": "\\[F = G\\frac{Mm}{r^2}\\]", "usage": "宇宙空間の星同士や、質量を持つ物体間に働く引き合う力を求める際", "reason": "2つの物体の質量の積に比例し、中心同士の距離の2乗に反比例する引力が働く。", "simText": "星の間の距離 r に応じて、互いに引っ張り合う万有引力 F をリアルタイム描画します。", "animType": "universal_gravitation" },
-                { "name": "ケプラーの第二法則", "math": "\\[\\frac{1}{2}rv\\sin\\phi = \\text{一定}\\]", "usage": "太陽の周りを回る惑星の、軌道上の場所による速度変化を見るとき", "reason": "中心力のみを受ける運動では、単位時間に掃き出す扇形の面積が常に等しくなる。", "simText": "太陽に近いときは猛スピードで進み、遠いときは減速し、面積が一定に保たれます。", "animType": "kepler_second" }
-            ]
-        },
-        "thermodynamics": {
-            "chap": "第4章 熱力学",
-            "title": "4. 熱量、気体の状態変化・状態方程式",
-            "formulas": [
-                { "name": "熱容量と比熱の式", "math": "\\[Q = mc\\Delta T\\]", "usage": "物質の温度を特定の値だけ上昇させるのに必要な熱量を求めるとき", "reason": "質量 m、物質固有の温まりにくさ（比熱） c、温度変化 ΔT の積で決まります。", "simText": "熱量 Q を加えることで、中の物質の熱運動が激しくなり温度 T が上がる過程です。", "animType": "heat_capacity" },
-                { "name": "ボイルの法則", "math": "\\[pV = \\text{一定}\\]", "usage": "温度を変えない（等温）状態で、気体を圧縮・膨張させるときの圧力変化", "reason": "体積 V が半分になると、分子が壁に衝突する頻度が2倍になり、圧力 p も2倍になる。", "simText": "ピストンで体微を押し縮めると、分子が激しく壁に当たり圧力 p が高まる様子です。", "animType": "boyles_law" },
-                { "name": "シャルルの法則", "math": "\\[\\frac{V}{T} = \\text{一定}\\]", "usage": "圧力を一定に保ったまま、気体を温めたときの体積変化を求めるとき", "reason": "温度 T（分子の速度）が上がると、圧力を保つために外へピストンを押し広げます。", "simText": "温度 T を上昇させると、分子の熱運動が加速し、体積 V が膨張します。", "animType": "charles_law" },
-                { "name": "理想気体の状態方程式", "math": "\\[pV = nRT\\]", "usage": "気体のマクロな状態（圧力、体積、物質量、温度）を一発で関連付けるとき", "reason": "ボイル・シャルルの法則とアボガドロの法則を統合した、熱力学の最重要公式です。", "simText": "容器に閉じ込められた n モルの分子の p, V, T の相互関係バランスを可視化します。", "animType": "ideal_gas_law" },
-                { "name": "気体分子の運動論と圧力", "math": "\\[p = \\frac{Nm v_x^2}{V}\\]", "usage": "ミクロな分子1個の衝突から、マクロな気体の「圧力」の正体を導くとき", "reason": "壁にぶつかって跳ね返る分子の運動量変化（力積）の総和が圧力になります。", "simText": "分子が壁に衝突し、速度 v_x が反転する際の力積の蓄積が圧力 p になる機構です。", "animType": "gas_kinetic_theory" },
-                { "name": "気体の内部エネルギー", "math": "\\[U = \\frac{3}{2}nRT\\]", "usage": "単原子分子理想気体が内部に持っている全熱エネルギー量を計算するとき", "reason": "内部の全分子が持つランダムな運動エネルギーをすべて合計したものです。", "simText": "温度 T が高まるほど、気体が蓄えている内部エネルギー U が上昇します。", "animType": "internal_energy" },
-                { "name": "熱力学第一法則", "math": "\\[\\Delta U = Q + W\\]", "usage": "気体が熱を吸収したり、仕事をされたりしたときのエネルギー変化を追うとき", "reason": "加えた熱 Q とされた仕事 W の合計が、内部エネルギー ΔU を増やす（エネルギー保存則）。", "simText": "外部からの熱 Q の流入と、ピストンによる仕事 W の注入が ΔU に化ける様子です。", "animType": "first_law_thermodynamics" },
-                { "name": "定圧変化における気体の仕事", "math": "\\[W = p\\Delta V\\]", "usage": "一定の圧力のもとで、気体が膨張または収縮したときの仕事を求める際", "reason": "力（圧力 p × 断面積）に移動距離（ピストンの変位）を掛けると pΔV になる。", "simText": "圧力を一定に保ち、体積が ΔV 増大したときに気体が外へ押し出す仕事 W です。", "animType": "gas_work_p_delta_v" }
-            ]
-        },
-        "waves": {
-            "chap": "第5章 波動",
-            "title": "5. 波の性質、音波の共鳴、光の干渉",
-            "formulas": [
-                { "name": "波の基本式", "math": "\\[v = f\\lambda\\]", "usage": "波の進む速さ、1秒間の振動数、波1個の長さ（波長）を関係付けるとき", "reason": "長さ λ の波が1秒間に f 個送り出されるため、進む距離（速度）は fλ になる。", "simText": "正弦波が伝播します。波長 λ の長さと、それが進む速度 v の対応です。", "animType": "wave_equation" },
-                { "name": "横波の媒質の運動", "math": "\\[v_y = \\text{各点の上下速度}\\]", "usage": "波が右に進むとき、その場所の空気や紐の粒子がどう動くか追うとき", "reason": "波の形（位相）自体は進みますが、媒質はその場で上下に往復運動しています。", "simText": "各媒質（赤丸）がその場で上下に速度ベクトル v_y を持って激しく往復します。", "animType": "transverse_wave_motion" },
-                { "name": "縦波（疎密波）の表示", "math": "\\[\\text{横方向の疎密振動}\\]", "usage": "音波などの「縦波」の実際の分子の詰まり具合を視覚的に理解するとき", "reason": "進行方向と同じ向きの振動を、分かりやすくするためにグラフ上で90度起こして表現します。", "simText": "分子が密集する「密」の領域と、スカスカな「疎」の領域が交互に右へ進みます。", "animType": "longitudinal_wave_motion" },
-                { "name": "波の干渉条件", "math": "\\[l_1 - l_2 = m\\lambda\\]", "usage": "2つの波源から出た波が、ある点で強め合うか弱め合うか判定するとき", "reason": "2つの経路の差（距離の差）が波長の整数倍（mλ）なら、山と山が重なって強め合う。", "simText": "波源 S_1, S_2 からの距離の差 l_1 - l_2 が波長の整数倍になる位置 P の干渉です。", "animType": "wave_interference" },
-                { "name": "弦の定常波（固有振動）", "math": "\\[f = \\frac{v}{2L}\\]", "usage": "ギターの弦などを弾いたときに発生する音の周波数を計算するとき", "reason": "両端が固定されて動かない「節」となり、長さ L の中に半波長が綺麗に収まります。", "simText": "両端が固定された長さ L の弦の中に定常波が立ち、最大に振れる「腹」が形成されます。", "animType": "stationary_wave_string" },
-                { "name": "開管の定常波", "math": "\\[f = \\frac{v}{2L}\\]", "usage": "リコーダーやフルートなど、両端が開いた管の中の空気の共鳴周波数", "reason": "管の両開口端は空気が自由に動ける「腹」となり、中央に「節」ができます。", "simText": "両端が自由端（腹）として空気分子が激しく往復する開管内の定常波です。", "animType": "stationary_wave_pipe_open" },
-                { "name": "閉管の定常波", "math": "\\[f = \\frac{v}{4L}\\]", "usage": "片方の端が閉じた管（テストチューブや一端を塞いだ筒）の共鳴周波数", "reason": "閉じた奥の端が必ず「節」、開いた口が「腹」となるため、最低でも 4L の波長が必要。", "simText": "右端の固定壁（節）では振動がゼロ、左の開口端（腹）で最大に振れる閉管モードです。", "animType": "stationary_wave_pipe_closed" },
-                { "name": "ドップラー効果（波源移動）", "math": "\\[f' = f \\frac{V}{V - v_s}\\]", "usage": "サイレンを鳴らす救急車が、自分に向かって近づいてくるときの音の変化", "reason": "波源が前方に進みながら波を出すため、前方の波長がギュッと押し縮められて短くなる。", "simText": "進行する波源（赤）の前方では波長が詰まり高音に、後方では伸びて低音になります。", "animType": "doppler_effect_source" },
-                { "name": "ドップラー効果（観測者移動）", "math": "\\[f' = f \\frac{V - v_o}{V}\\]", "usage": "鳴っている音源に向かって、自分が車などで近づいたり遠ざかったりするとき", "reason": "波の波長自体は変わりませんが、自分が動くことで1秒間にぶつかる波の数が増減する。", "simText": "静止した音源から広がる波面に向かって進む観測者（緑）が受ける周波数変化です。", "animType": "doppler_effect_observer" },
-                { "name": "反射・屈折の法則", "math": "\\[\\frac{\\sin i}{\\sin r} = n_{12}\\]", "usage": "光や波が水やガラスの境界で折れ曲がって進むときの角度を求める際", "reason": "媒質中での波の進む「速度の違い（屈折率の差）」によって波面が傾斜します。", "simText": "空気から水などへ侵入する際の入射角 i と屈折角 r、および波面の折れ曲がりです。", "animType": "reflection_refraction_law" },
-                { "name": "全反射の臨界角", "math": "\\[\\sin i_0 = \\frac{n_2}{n_1}\\]", "usage": "水中から空気中へ光を放つとき、光が外に出ずに100%跳ね返る限界角", "reason": "屈折率の大きい側から小さい側へ光が進むとき、屈折角が先に90度に達してしまいます。", "simText": "入射角を徐々に広げ、臨界角 i_0 を超えた瞬間に外への光が消え全反射する様子です。", "animType": "total_reflection" },
-                { "name": "薄膜の干渉", "math": "\\[2nd \\cos r = m\\lambda\\]", "usage": "シャボン玉の表面や水上の油膜が、光の反射でカラフルに見える現象の計算", "reason": "膜の表面で反射した光と、膜の裏面で反射して戻ってきた光の往復経路の差です。", "simText": "厚み d、屈折率 n の薄膜内を光が往復する際の経路差と干渉位相を可視化します。", "animType": "thin_film_interference" },
-                { "name": "ヤングの実験", "math": "\\[\\frac{dx}{L} = m\\lambda\\]", "usage": "2つの細いスリットを通過した光が、スクリーンに明暗の縞模様を作るとき", "reason": "スリット間隔 d、スクリーンまでの距離 L による微小な光の経路の差を幾何学的に計算。", "simText": "2つのスリット S_1, S_2 から出た光の経路が、スクリーン上で明暗の干渉縞を結びます。", "animType": "young_double_slit" },
-                { "name": "凸レンズの写像公式", "math": "\\[\\frac{1}{a} + \\frac{1}{b} = \\frac{1}{f}\\]", "usage": "レンズの前に置いた物体の像が、どこに、どんな大きさで結像するか求める", "reason": "レンズの中心を通る直進光と、焦点を通過して平行になる光の幾何学的相似性から。", "simText": "物体距離 a を動かすと、焦点 f を経由した光線が集束して像位置 b が自動連動します。", "animType": "convex_lens_equation" }
-            ]
-        },
-        "electromagnetism": {
-            "chap": "第6章 電磁気",
-            "title": "6. 電場、コンデンサー、回路、磁場、電磁誘導、交流",
-            "formulas": [
-                { "name": "クーロンの法則", "math": "\\[F = k\\frac{q_1 q_2}{r^2}\\]", "usage": "プラスやマイナスの電荷を持った粒子の間に働く静電気力を計算するとき", "reason": "電荷量の積に比例し、距離の2乗に反比例します（同符号は反発、異符号は引き合う）。", "simText": "2つの電荷（q_1, q_2）の距離 r に応じて、引き合う、または退け合うクーロン力 F です。", "animType": "coulombs_law" },
-                { "name": "電場から受ける力", "math": "\\[F = qE\\]", "usage": "電界（電場）が存在する空間に、電荷を持ち込んだときに受ける力", "reason": "電場 E とは「1クーロンあたりに働く力」として定義されているため、電荷量 q を乗算します。", "simText": "一面に広がる電場 E（緑の矢印）の向きに沿って、プラス電荷 q が受ける力 F です。", "animType": "electric_field_e" },
-                { "name": "静電エネルギー（電位）", "math": "\\[U = qV\\]", "usage": "電位（電気的な高さ）が V の場所に、電荷 q を置いたときの静電エネルギー", "reason": "単位電荷あたりの位置エネルギーが電位 V であり、持ち込む電荷量に比例します。", "simText": "電圧の傾斜（電場）を滑り降りる電荷が持つ、各地点での静電位置エネルギー U です。", "animType": "electric_potential_v" },
-                { "name": "コンデンサーの電気容量", "math": "\\[C = \\varepsilon \\frac{S}{d}\\]", "usage": "極板の面積や間隔、挟む物質から、電気を蓄えられる容量を計算するとき", "reason": "極板面積 S が広いほど多く貯まり、間隔 d が狭いほどプラスとマイナスが強く引き合って安定します。", "simText": "対向する極板の間隔 d と面積 S によって決定される容量 C と内部電場の様子です。", "animType": "capacitor_capacitance" },
-                { "name": "コンデンサーの静電エネルギー", "math": "\\[U = \\frac{1}{2}CV^2\\]", "usage": "充電されたコンデンサーが内部に蓄えている全電気エネルギーを求めるとき", "reason": "電荷を溜めていく際、徐々に高まる電圧（押し戻す力）に抗して外部がした仕事です。", "simText": "充電電圧 V の上昇に伴い、エネルギー U が二次関数的に溜まるメーターです。", "animType": "capacitor_energy" },
-                { "name": "オームの法則", "math": "\\[V = RI\\]", "usage": "電気回路の抵抗を流れる電流、電気抵抗、かかる電圧の関係を求めるとき", "reason": "電流（電荷の流れ）は、押し出す電圧に比例し、障害となる抵抗値に反比例します。", "simText": "抵抗 R に電圧 V を印加した際、中を流れる電流 I（移動電子の群れ）のシミュレーション。", "animType": "ohms_law" },
-                { "name": "抵抗率の式", "math": "\\[R = \\rho \\frac{l}{S}\\]", "usage": "導線の太さ（断面積）や長さ、材質から、その線の電気抵抗値を求めるとき", "reason": "長さ l が長いほど電子がぶつかる障害が増え、断面積 S が広いほど通りやすくなります。", "simText": "断面積 S、長さ l、および物質固有の抵抗率 ρ による電気抵抗 R の変化モデルです。", "animType": "resistivity_dependence" },
-                { "name": "ジュール熱", "math": "\\[Q = R I^2 t\\]", "usage": "ニクロム線などの抵抗に電流を流したときに、発生する熱量を計算するとき", "reason": "流れる自由電子が導線内の陽イオンに激突し、格子振動を激しくさせることで熱に化けます。", "simText": "抵抗 R に電流 I を通じたとき、発生するジュール熱 Q の累積を熱気として表現します。", "animType": "joule_heating" },
-                { "name": "キルヒホッフの第二法則", "math": "\\[\\sum V = 0\\]", "usage": "枝分かれした複雑な回路の各部に流れる電流をくまなく計算するとき", "reason": "回路の任意のループを一巡したとき、電池による電位上昇と抵抗による電圧降下の総和はゼロ（エネルギー保存）。", "simText": "回路を一巡したときの電位のアップダウンの合計が、綺麗にスタート地点に戻るつり合いです。", "animType": "kirchhoff_laws" },
-                { "name": "直線電流が作る磁場", "math": "\\[H = \\frac{I}{2\\pi r}\\]", "usage": "まっすぐな導線に電流を流したとき、その周囲にできる磁場の強さを求める", "reason": "電流を中心とする同心円状に磁場が発生し、中心からの距離 r に反比例します。", "simText": "電流 I の周りに右ねじの法則に従って発生する円形の磁場 H ベクトルを表示します。", "animType": "magnetic_field_current" },
-                { "name": "アンペール力（電磁力）", "math": "\\[F = IBl\\]", "usage": "磁場の中に置いた導線に電流を流したとき、導線全体が受ける力の計算", "reason": "磁場中を移動する無数の電子が受ける微小な力の合計が、マクロな導線への力 F となる。", "simText": "外部磁場 B の中を横切る電流 I（長さ l）が受ける電磁力 F（フレミング左手）です。", "animType": "ampere_force" },
-                { "name": "ローレンツ力と円運動", "math": "\\[F = qvB\\]", "usage": "磁場の中を単一の電子やイオンが飛び回るときに受ける力を求める", "reason": "移動する電荷 q の速度 v と、磁場 B の両方に垂直な向きに常に力が働くため、円運動をします。", "simText": "均一な磁場（×印）に対して直角に飛び込んだ電荷が、ローレンツ力 F で綺麗な円を描きます。", "animType": "lorentz_force_motion" },
-                { "name": "ファラデーの電磁誘導の法則", "math": "\\[V = -N\\frac{\\Delta\\Phi}{\\Delta t}\\]", "usage": "コイルに磁石を近づけたり遠ざけたりしたときに生じる誘導電圧を求める", "reason": "コイル内部を貫く磁束 Φ の変化を邪魔する向き（マイナス）に逆起電力を生じます。", "simText": "磁束 Φ が時間変化（ΔΦ/Δt）した瞬間に、コイルの端に発生する誘導起電力 V のメーター運動。", "animType": "faradays_law_induction" },
-                { "name": "磁場を横切る導体棒の起電力", "math": "\\[V = vBl\\]", "usage": "磁場の中で金属棒を動かしたとき、その棒自体が発電機（電池）になるとき", "reason": "棒と一緒に動く内部の電子がローレンツ力を受け、棒の一端に押し寄せられて電位差が生じる。", "simText": "速度 v で磁場 B を切って進む長さ l の導体棒の両端に発生する電圧 V の様子です。", "animType": "induced_emf_conductor" },
-                { "name": "自己誘導", "math": "\\[V = -L\\frac{\\Delta I}{\\Delta t}\\]", "usage": "コイルに流れる電流を急に変えたとき、コイル自身が反発して起こす電圧", "reason": "自分の電流が変わることで自分自身の磁場が変化し、それを打ち消そうとする起電力を生む。", "simText": "電流 I の変化率 ΔI/Δt に応じて、自己インダクタンス L のコイルが発生させる逆電圧 V です。", "animType": "self_induction" },
-                { "name": "交流電圧の発生", "math": "\\[V = V_0 \\sin(\\omega t)\\]", "usage": "発電所で磁石の間でコイルを等速回転させて交流電力を生み出すとき", "reason": "回転によりコイルを貫く磁束がコサイン波形となり、ファラデーの微分でサイン波の電圧が出る。", "simText": "磁場中を一定の角速度 ω で回転するコイルの角度と、出力される正弦波交流電圧の連動です。", "animType": "ac_generation" },
-                { "name": "交流回路：抵抗の振る舞い", "math": "\\[I = \\frac{V}{R}\\]", "usage": "交流電源にピュアな抵抗器のみを接続したときの電流計算", "reason": "抵抗は電力を消費するだけで位相に影響を与えないため、電圧と電流のタイミングが完全一致します。", "simText": "複素平面（フェーザ表示）上で、電圧 V と電流 I が同位相で一丸となって回転します。", "animType": "ac_resistor" },
-                { "name": "交流回路：コンデンサー（容量リアクタンス）", "math": "\\[X_C = \\frac{1}{\\omega C}\\]", "usage": "交流電源にコンデンサーを繋いだときの、電流の通しにくさを求める際", "reason": "極板への電荷の充放電のタイミングのズレにより、電流の位相が電圧より90度（π/2）進みます。", "simText": "フェーザ表示で、電流ベクトル I が電圧 V よりも常に90度先行して反時計回りに回ります。", "animType": "ac_capacitor" },
-                { "name": "交流回路：コイル（誘導リアクタンス）", "math": "\\[X_L = \\omega L\\]", "usage": "交流電源にコイルを繋いだときの、交流に対する抵抗（リアクタンス）計算", "reason": "自己誘導による逆起電力が電流の立ち上がりを遅らせるため、電流位相が90度（π/2）遅れます。", "simText": "フェーザ表示で、電流ベクトル I が電圧 V から常に90度遅れて追従回転します。", "animType": "ac_inductor" },
-                { "name": "RLC直列共振", "math": "\\[f_0 = \\frac{1}{2\\pi\\sqrt{LC}}\\]", "usage": "ラジオの選局など、特定の周波数の電波だけを最大強度で受信したいとき", "reason": "コイルの遅らせる性質とコンデンサーの進める性質が完全に相殺し、全体の抵抗が最小化します。", "simText": "電源の周波数 f を変化させていくと、共振周波数 f_0 で電流 I が爆発的に跳ね上がります。", "animType": "rle_resonance" }
-            ]
-        },
-        "atomic_physics": {
-            "chap": "第7章 原子",
-            "title": "7. 光量子、コンプトン散乱、ボーアモデル、原子核",
-            "formulas": [
-                { "name": "光電効果（アインシュタインの式）", "math": "\\[K_{max} = h\\nu - W\\]", "usage": "金属に光をあてたとき、飛び出す電子の持つ最大運動エネルギーを計算する", "reason": "光を粒子（光子）と考え、1個の光子エネルギー hν から脱出費用 W を引いた残りが運動エネルギーとなる。", "simText": "光子エネルギー hν が金属表面に衝突し、仕事関数 W を差し引いた K_max の速度で光電子 e⁻ が出ます。", "animType": "photoelectric_einstein" },
-                { "name": "コンプトン効果", "math": "\\[\\Delta\\lambda = \\lambda' - \\lambda = \\frac{h}{m_e c}(1-\\cos\\theta)\\]", "usage": "X線を電子にぶつけたとき、跳ね返ったX線の波長がどれだけ伸びるか求める", "reason": "光子と電子の衝突を、ビリヤードのような「粒子同士の運動量保存則」として解くことで導かれます。", "simText": "入射X線（λ）が静止電子に激突し、散乱角 θ へはじき飛ばされたX線の波長が λ' へ伸長します。", "animType": "x_ray_compton" },
-                { "name": "ボーアの量子化条件", "math": "\\[mvr = n\\frac{h}{2\\pi}\\]", "usage": "水素原子の中の電子が、電磁波を放出せずに安定して回れる特殊な軌道の特定", "reason": "電子の持つ「物質波」の波長が、軌道一周の長さの中にちょうど整数倍収まる定常波の条件です。", "simText": "中心の原子核（+Ze）のまわりを、量子化された特定の半径 r をキープして回る安定電子です。", "animType": "bohr_atom_model" },
-                { "name": "ド・ブロイの物質波波長", "math": "\\[\\lambda = \\frac{h}{p} = \\frac{h}{mv}\\]", "usage": "電子などの「質量のある粒子」が、顕微鏡などで波として振る舞うときの波長", "reason": "アインシュタインの光の二面性（波と粒子）を、すべての物質粒子へ逆展開した大仮説です。", "simText": "速度 v で高速移動する電子（質量 m）に、波長 λ のド・ブロイ波の波形が随伴する様子です。", "animType": "de_broglie_wave" },
-                { "name": "放射性崩壊と半減期", "math": "\\[N = N_0 \\left(\\frac{1}{2}\\right)^{\\frac{t}{T}}\\]", "usage": "ウランなどの不安定な原子核が、時間経過でどれくらい崩壊せずに残るか予測する", "reason": "各原子核が確率的に崩壊するため、半減期 T が経つごとに全体の残数が半分に激減（指数減少）します。", "simText": "時間 t に伴い、N_0 個あった未崩壊原子核（緑）が確率崩壊（灰色）に変色していく全数演算です。", "animType": "radioactive_decay_half" },
-                { "name": "質量欠損とアインシュタインのエネルギー", "math": "\\[E = \\Delta m \\cdot c^2\\]", "usage": "原子核反応（核融合や核分裂）の際に発生する、莫大なエネルギー量を求める", "reason": "核子が結合する際に失われたわずかな質量 Δm が、光速 c の2乗という巨大な倍率でエネルギーに変形する。", "simText": "バラバラの原子核が集まって結合する（質量欠損 Δm）の瞬間に、猛烈な光エネルギー E が解き放たれます。", "animType": "mass_defect_einstein" }
-            ]
-        }
-    };
-
-    // ----------------------------------------------------
-    // 【UI制御層】サイドバーメニューおよびカードの動的構築
-    // ----------------------------------------------------
-    const menuList = document.getElementById('menu-list');
-    let currentChap = "";
-    let chapGroup = null;
-    let chapUl = null;
-
-    if (typeof physicsData !== 'undefined') {
-        Object.keys(physicsData).forEach(key => {
-            const data = physicsData[key];
-            if (data.chap !== currentChap) {
-                chapGroup = document.createElement('div');
-                chapGroup.className = 'chapter-group';
-                const title = document.createElement('div');
-                title.className = 'chapter-title';
-                title.innerText = data.chap;
-                chapGroup.appendChild(title);
-                
-                chapUl = document.createElement('ul');
-                chapUl.className = 'chapter-list';
-                chapGroup.appendChild(chapUl);
-                menuList.appendChild(chapGroup);
-                currentChap = data.chap;
+// ==========================================
+// 必須データ: physicsData の定義 (全分野完全網羅)
+// ==========================================
+const physicsData = {
+    linear_motion: {
+        chap: "第1章 力学",
+        title: "等加速度直線運動",
+        formulas: [
+            {
+                name: "等加速度直線運動の速度・変位",
+                math: "\\[ v = v_0 + at, \\quad x = v_0t + \\frac{1}{2}at^2 \\]",
+                usage: "一定の加速度で直線上を進む物体の、任意の時刻における速度や位置を求めたいとき。",
+                reason: "初速度に「加速した分（at）」を加えると現在の速度になり、それを時間積分（または平均速度×時間）すると移動距離になります。",
+                simText: "青いブロックが右向きに等加速度運動（または等速運動）する様子です。上のグラフはt-v図、またはt-x図の推移を示します。青矢印は速度、緑矢印は加速度です。",
+                animType: "accel_linear"
             }
-            const li = document.createElement('li');
-            li.className = 'item';
-            li.innerText = data.title;
-            li.onclick = () => {
-                document.querySelectorAll('.chapter-list .item').forEach(el => el.classList.remove('active'));
-                li.classList.add('active');
-                document.getElementById('unit-title').innerText = data.title;
-                
-                const container = document.getElementById('formula-cards-container');
-                container.innerHTML = "";
-                data.formulas.forEach((f, idx) => {
-                    const card = document.createElement('div');
-                    card.className = "formula-card";
-                    card.innerHTML = `<h3>${f.name}</h3><div class="math-box">${f.math}</div>
-                        <div class="desc-section"><strong>いつ使う？</strong><br>${f.usage}</div>
-                        <div class="desc-section"><strong>式の意味</strong><br>${f.reason}</div>`;
-                    card.onclick = () => {
-                        document.querySelectorAll('.formula-card').forEach(c => c.classList.remove('active'));
-                        card.classList.add('active');
-                        document.getElementById('sim-desc').innerText = f.simText;
-                        setAnimation(f.animType);
-                    };
-                    container.appendChild(card);
-                    if(idx === 0) card.click();
-                });
-                if (window.MathJax) MathJax.typesetPromise();
-            };
-            chapUl.appendChild(li);
-        });
-        // 初期起動時に最初の項目をクリック選択
-        setTimeout(() => { const firstItem = document.querySelector('.chapter-list .item'); if(firstItem) firstItem.click(); }, 300);
+        ]
+    },
+    falling_bodies: {
+        chap: "第1章 力学",
+        title: "落体の運動",
+        formulas: [
+            {
+                name: "斜方投射・自由落下",
+                math: "\\[ y = v_0t + \\frac{1}{2}gt^2, \\quad v = v_0 + gt \\]",
+                usage: "重力を受けて自由落下、または斜めに投げ上げられた物体の放物運動を解析するとき。",
+                reason: "水平方向には力を受けないため等速（慣性運動）ですが、鉛直方向には下向きの一定な重力加速度 $g$ を受け続けるため、等加速度運動になります。",
+                simText: "赤い球体を斜め上方に投げ上げたシミュレーションです。ドットの軌跡は放物線を描き、青矢印（速度ベクトル）と緑矢印（重力加速度 g）がリアルタイムに表示されます。",
+                animType: "throw_angle"
+            }
+        ]
+    },
+    forces_spring: {
+        chap: "第1章 力学",
+        title: "力と摩擦・ばね",
+        formulas: [
+            {
+                name: "フックの法則 (ばねの弾性力)",
+                math: "\\[ F = -kx \\]",
+                usage: "ばねが伸び縮みしたときに、物体を引き戻そうとする弾性力を求めるとき。",
+                reason: "力 $F$ はばねの変位 $x$ に比例し、常に自然長（中心）に戻ろうとする逆の向き（マイナス符号）に働きます。",
+                simText: "ばねに繋がれた紫のブロックの運動です。中心の自然長から離れるほど、逆向きに強い復元力 F (赤矢印) がかかるフックの法則を視覚化しています。",
+                animType: "force_spring"
+            },
+            {
+                name: "摩擦力の定義",
+                math: "\\[ f = \\mu N \\]",
+                usage: "物体が接触面から受ける摩擦の大きさを計算するとき。",
+                reason: "接触面を押し付ける力（垂直抗力 $N$）と、面の粗さ（摩擦係数 $\\mu$）の積によって摩擦の限界値や動摩擦力が決まります。",
+                simText: "床の上のブロックを引っ張るシミュレーションです。引く力 F (青) と、それに対抗する床からの摩擦力 f (オレンジ) の関係を示しています。",
+                animType: "force_friction_d"
+            }
+        ]
+    },
+    buoyancy: {
+        chap: "第1章 力学",
+        title: "圧力と浮力",
+        formulas: [
+            {
+                name: "アルキメデスの原理 (浮力)",
+                math: "\\[ F = \\rho V g \\]",
+                usage: "水などの流体中に浮いている、または沈んでいる物体が受ける上向きの力を求めるとき。",
+                reason: "物体が退けた流体の質量（密度 $\\rho \\times$ 体積 $V$）に働く重力と全く同じ大きさの反作用が、上向きの浮力として現れます。",
+                simText: "流体中の物体が受ける力のつり合いです。物体にかかる下向きの重力 mg (赤) と、流体から受ける上向きの浮力 ρVg (緑) が表示されています。",
+                animType: "buoyancy"
+            }
+        ]
+    },
+    moment: {
+        chap: "第1章 力学",
+        title: "剛体のつり合い",
+        formulas: [
+            {
+                name: "力のモーメント",
+                math: "\\[ M = F l \\]",
+                usage: "物体を回転させる効果の大きさを評価したり、てんびんのつり合いを考えるとき。",
+                reason: "回転の軸からの距離（腕の長さ $l$）が長いほど、またそこに垂直に加わる力 $F$ が大きいほど、物体を回転させる能力が高くなります。",
+                simText: "支点の上に置かれた剛体棒（天秤）のモデルです。左右に配置されたおもりによる力のモーメントが相殺され、回転がつり合っている様子を表します。",
+                animType: "moment_balance"
+            },
+            {
+                name: "重心の公式",
+                math: "\\[ x_G = \\frac{m_1x_1 + m_2x_2}{m_1 + m_2} \\]",
+                usage: "複数の質量が集まった全体の質量中心（重心）の位置を求めるとき。",
+                reason: "各点の位置を質量で重み付けした平均値であり、この点に全質量が集約されているかのように全体が運動します。",
+                simText: "大小2つの質量（m₁, m₂）を繋いだ棒と、そのバランスポイントである重心位置 x_G (緑の点) の位置関係を可視化しています。",
+                animType: "moment_center"
+            }
+        ]
+    },
+    momentum: {
+        chap: "第1章 力学",
+        title: "運動量と衝突",
+        formulas: [
+            {
+                name: "運動量保存則",
+                math: "\\[ m_1v_1 + m_2v_2 = m_1v_1' + m_2v_2' \\]",
+                usage: "2つの物体が衝突、または破裂・合体するときの、衝突前後の速度変化を求めるとき。",
+                reason: "衝突時に互いに及ぼし合う力は内力（作用・反作用）だけなので、系全体の運動量の総和は変化しません。",
+                simText: "2つの球体が直線上を動いて衝突する様子です。衝突によって各速度は急変しますが、全体の運動量の和 (m₁v₁ + m₂v₂) は完全に一定に保たれます。",
+                animType: "collision"
+            }
+        ]
+    },
+    energy: {
+        chap: "第1章 力学",
+        title: "エネルギー保存則",
+        formulas: [
+            {
+                name: "力学的エネルギー保存則",
+                math: "\\[ E = K + U = \\frac{1}{2}mv^2 + mgh = \\text{一定} \\]",
+                usage: "摩擦や空気抵抗を無視できる状況で、物体の高さ変化と速度変化の関係を追いたいとき。",
+                reason: "重力やばねの力などの「保存力」だけが仕事をする場合、運動エネルギー $K$ と位置エネルギー $U$ の間で形を変えるだけで、総量は変わりません。",
+                simText: "単振り子の運動とエネルギーの推移です。右側のグラフで、運動エネルギー K (緑) と位置エネルギー U (オレンジ) が変化しても、総量 E (紫) が常に一定であることを示します。",
+                animType: "energy"
+            }
+        ]
+    },
+    circular: {
+        chap: "第1章 力学",
+        title: "円運動",
+        formulas: [
+            {
+                name: "向心力（遠心力）",
+                math: "\\[ F = mr\\omega^2 = \\frac{mv^2}{r} \\]",
+                usage: "物体が半径 $r$ の円軌道を等速で回り続けるために必要な、中心向きの力を計算するとき。",
+                reason: "円運動は常に中心に向かって加速（向きの変化）しているため、運動方程式 $F=ma$ より、加速度 $r\\omega^2$ に応じた向心力が必要になります。",
+                simText: "等速円運動のシミュレーションです。接線方向の速度 v (青矢印) と、常に中心を向く向心力 F (赤矢印、または回転系から見た外向きの遠心力) が描かれます。",
+                animType: "circular"
+            }
+        ]
+    },
+    gravity: {
+        chap: "第1章 力学",
+        title: "万有引力",
+        formulas: [
+            {
+                name: "万有引力の法則",
+                math: "\\[ F = G \\frac{m_1m_2}{r^2} \\]",
+                usage: "宇宙空間の惑星や、質量を持つ2物体間に働く引き合う力を計算するとき。",
+                reason: "質量を持つ全ての物体は互いに引き合っており、その強さは互いの質量の積に比例し、距離 $r$ の2乗に反比例します。",
+                simText: "中心にある太陽（橙）の周囲を、地球（青）が万有引力 F (赤矢印) を受けながら公転するケプラー運動の様子です。距離が離れると引力は急激に弱まります。",
+                animType: "gravity"
+            }
+        ]
+    },
+    shm: {
+        chap: "第1章 力学",
+        title: "単振動",
+        formulas: [
+            {
+                name: "単振動の変位・復元力",
+                math: "\\[ x = A \\sin(\\omega t), \\quad F = -Kx \\]",
+                usage: "等速円運動を横から見たような、往復運動（サイン運動）の挙動を調べるとき。",
+                reason: "中心からのズレ $x$ に比例した逆向きの力（復元力）が働くとき、物体は周期的な正弦波の軌道を描いて振動します。",
+                simText: "左側の円運動の上下の動きを取り出して、右側で時間軸に沿って展開したものです。時間が経つにつれて綺麗なサインカーブ（緑）が形成されます。",
+                animType: "shm"
+            }
+        ]
+    },
+    thermo_heat: {
+        chap: "第2章 熱力学",
+        title: "熱量と状態変化",
+        formulas: [
+            {
+                name: "比熱と熱量の関係",
+                math: "\\[ Q = mc\\Delta T \\]",
+                usage: "物質の温度を $\\Delta T$ だけ変化させるために必要な熱量を計算するとき。",
+                reason: "物質を温めるために必要な熱量は、その質量 $m$ と、物質固有の温まりにくさである比熱 $c$、および上昇させたい温度幅に比例します。",
+                simText: "容器内の気体（または液体）の熱運動をミクロに表したものです。下部から熱量 Q (赤矢印) が加わると温度計 T が上昇し、分子の飛び回るスピードが激しくなります。",
+                animType: "heat"
+            }
+        ]
+    },
+    thermo_gas: {
+        chap: "第2章 熱力学",
+        title: "理想気体の法則",
+        formulas: [
+            {
+                name: "気体の状態方程式 / 第一法則",
+                math: "\\[ pV = nRT, \\quad \\Delta U = Q + W \\]",
+                usage: "ピストン内の気体の圧力、体積、温度の関係、あるいは熱を出し入れしたときの内部エネルギー変化を追うとき。",
+                reason: "気体分子が壁に衝突することで圧力 $p$ が生まれます。体積が変化（$\\Delta V$）すると外部に仕事 $W$ をし、熱 $Q$ の出入りと合わせてエネルギーが保存されます。",
+                simText: "ピストンで密閉された気体分子のシミュレーションです。ピストンを圧縮すると体積 V が減り、分子が壁にぶつかる頻度が増えて圧力 p や温度 T が上昇します。",
+                animType: "gas"
+            }
+        ]
+    },
+    wave_base: {
+        chap: "第3章 波動",
+        title: "波の基本性質",
+        formulas: [
+            {
+                name: "波の基本式",
+                math: "\\[ v = f\\lambda, \\quad T = \\frac{1}{f} \\]",
+                usage: "光や音、水の波などの伝播速度、振動数、波長の関係を求めるとき。",
+                reason: "波長 $\\lambda$（波1個の長さ）の波が、1秒間に $f$ 回（振動数）送り出されるため、波の進む速さは $f \\times \\lambda$ になります。",
+                simText: "媒質が上下に振動しながら、波の形（正弦波）が右へ速度 v で進む横波の様子です。連続する山と山の間の長さが波長 λ を表します。",
+                animType: "wave"
+            }
+        ]
+    },
+    wave_doppler: {
+        chap: "第3章 波動",
+        title: "音波とドップラー効果",
+        formulas: [
+            {
+                name: "ドップラー効果",
+                math: "\\[ f' = f \\frac{V - v_o}{V - v_s} \\]",
+                usage: "救急車（音源）が近づいたり、自分が動いたりしたときに、聞こえる音の高さ（振動数）の変化を計算するとき。",
+                reason: "音源が動く（$v_s$）と空間の波長が縮み、観測者が動く（$v_o$）と1秒間にすれ違う波の数が変わるため、聞こえる振動数が変化します。",
+                simText: "動く音源（赤）から周囲に広がる音波を上から見た様子です。音源の進行方向（右）では波が密集して波長が短くなり（高音）、後方では広がって低音になります。",
+                animType: "doppler"
+            }
+        ]
+    },
+    wave_optics: {
+        chap: "第3章 波動",
+        title: "光の屈折とレンズ",
+        formulas: [
+            {
+                name: "レンズの結像公式",
+                math: "\\[ \\frac{1}{a} + \\frac{1}{b} = \\frac{1}{f} \\]",
+                usage: "凸レンズの前方に置いた物体が、レンズの後方のどの位置にどのような像を結ぶかを求めるとき。",
+                reason: "焦点 $f$ を通る光や中心を通る光が直線的に進むという幾何学的な相似関係から、物体距離 $a$ と像距離 $b$ の間にこの反比例関係が成り立ちます。",
+                simText: "凸レンズによる光の屈折と像の形成です。光源 A (赤) から出た光線がレンズで曲げられ、反対側の焦点を通って実像 A' (オレンジ) を結ぶ経路を示しています。",
+                animType: "lens"
+            }
+        ]
+    },
+    elec_field: {
+        chap: "第4章 電磁気",
+        title: "電場とコンデンサー",
+        formulas: [
+            {
+                name: "クーロンの法則",
+                math: "\\[ F = k \\frac{q_1q_2}{r^2} \\]",
+                usage: "帯電した2つの粒子の間に働く、静電気的な引き合う力（引力）や反発する力（斥力）を求めるとき。",
+                reason: "電荷の強さの積に比例し、粒子間の距離 $r$ の2乗に反比例する力が電荷同士の間に作用します（万有引力に似た性質）。",
+                simText: "プラスの点電荷（赤）とマイナスの点電荷（青）の間に働くクーロン力です。異符号のため互いに引き合う向きの力 F (赤矢印) が生じています。",
+                animType: "coulomb"
+            },
+            {
+                name: "平行板コンデンサーの電気容量",
+                math: "\\[ C = \\varepsilon \\frac{S}{d}, \\quad U = \\frac{1}{2}CV^2 \\]",
+                usage: "極板の面積 $S$ や間隔 $d$ から、電気を蓄えられる量（電気容量）を求めるとき。",
+                reason: "極板が広いほど多くの電気を集められ、間隔が狭いほどプラスとマイナスが強く引き合うため電荷をたくさん保持できます。",
+                simText: "コンデンサーの極板にプラス（赤）とマイナス（青）の電荷が蓄えられ、内部に均一な電場 E (緑矢印) が発生している様子です。",
+                animType: "capacitor"
+            }
+        ]
+    },
+    elec_circuit: {
+        chap: "第4章 電磁気",
+        title: "直流回路",
+        formulas: [
+            {
+                name: "抵抗とオームの法則",
+                math: "\\[ V = RI \\]",
+                usage: "電気回路の抵抗を流れる電流の強さ、またはその両端の電圧（電位差）を求めるとき。",
+                reason: "回路に電流 $I$ を流すためには、電流の通りにくさ（抵抗 $R$）に比例した電気的な高低差（電圧 $V$）が必要になります。",
+                simText: "シンプルな1ループの直流回路です。電池の電圧 V によって抵抗 R に向かって電流 I が流れる様子と、その方向をオレンジの矢印で表しています。",
+                animType: "circuit"
+            }
+        ]
+    },
+    elec_mag: {
+        chap: "第4章 電磁気",
+        title: "磁場とローレンツ力",
+        formulas: [
+            {
+                name: "ローレンツ力",
+                math: "\\[ F = qvB \\sin\\theta \\]",
+                usage: "磁場の中を運動する電子やイオンなどの荷電粒子が、磁場から受ける横向きの力を求めるとき。",
+                reason: "動く電荷は電流と同じです。磁場の中を電流が横切ると、電流と磁場の双方に垂直な方向に力（フレミングの左手の法則）を受けます。",
+                simText: "画面奥向きの一様な磁場 B (「×」印) の中を、黄色い荷電粒子が動く様子です。速度 v に対し常に垂直なローレンツ力 F (オレンジ) を受けるため、粒子は円運動します。",
+                animType: "lorentz"
+            }
+        ]
+    },
+    elec_induction: {
+        chap: "第4章 電磁気",
+        title: "電磁誘導と交流",
+        formulas: [
+            {
+                name: "交流起電力の発生",
+                math: "\\[ V = V_0 \\sin(\\omega t) \\]",
+                usage: "発電機のように磁場の中でコイルを回転させたときに発生する、周期的な電圧を記述するとき。",
+                reason: "コイルの中を貫く磁束の量が回転によって周期的に変化するため、ファラデーの法則に基づき、時間とともに向きが変わる正弦波の起電力が生まれます。",
+                simText: "一様な磁場中でコイルが回転する様子（左）と、それによって誘導され時間とともにサイン振動する交流電圧 V (右) の対応関係を示しています。",
+                animType: "ac_gen"
+            }
+        ]
+    },
+    atomic: {
+        chap: "第5章 原子",
+        title: "原子と量子力学",
+        formulas: [
+            {
+                name: "光電効果の公式",
+                math: "\\[ K_{\\text{max}} = h\\nu - W \\]",
+                usage: "金属に光を当てたときに電子が飛び出す現象において、電子が持つ最大の運動エネルギーを求めるとき。",
+                reason: "光を粒子（光子）と考え、光子1個のエネルギー $h\\nu$ から、金属の外に脱出するために消費される最低限のエネルギー（仕事関数 $W$）を引いた残りが電子のエネルギーになります。",
+                simText: "金属プレートに光子（黄色の波）が衝突し、エネルギーを得た電子（青丸）が仕事関数 W を振り切って飛び出していく光電効果のモデルです。",
+                animType: "photo"
+            },
+            {
+                name: "アインシュタインの質量エネルギー等価性",
+                math: "\\[ E = \\Delta m c^2 \\]",
+                usage: "核反応などの前後で発生する質量の減少（質量欠損 $\\Delta m$）から、放出される膨大なエネルギーを求めるとき。",
+                reason: "質量とエネルギーは本質的に同じものであり、わずかな質量 $\\Delta m$ が消失するだけで、光速 $c$ の2乗倍という莫大なエネルギーに変換されます。",
+                simText: "質量欠損によるエネルギー放出のイメージです。不安定な原子核の質量 Δm が消滅したとき、周囲に莫大な光・熱エネルギー E が放たれます。",
+                animType: "mass"
+            }
+        ]
     }
+};
 
-    // ----------------------------------------------------
-    // 【物理キャンバス層】基本キャンバス設定・ドラッグ・ズーム
-    // ----------------------------------------------------
-    const canvas = document.getElementById('sim-canvas');
-    const ctx = canvas.getContext('2d');
-    let animType = "";
-    let isPlaying = true;
-    let time = 0;
-    let scale = 1.0, panX = 0, panY = 0;
-    let isDragging = false, lastX = 0, lastY = 0;
+// ==========================================
+// ユーザー提供のシミュレーションロジック (バグ修正・結合版)
+// ==========================================
 
-    function resizeCanvas() { 
-        canvas.width = canvas.parentElement.clientWidth; 
-        canvas.height = canvas.parentElement.clientHeight; 
-    }
-    window.addEventListener('resize', resizeCanvas); 
-    resizeCanvas();
+const menuList = document.getElementById('menu-list');
+let currentChap = "";
+let chapGroup = null;
+let chapUl = null;
 
-    function setAnimation(type) { 
-        animType = type; time = 0; scale = 1.0; panX = 0; panY = 0; 
-        const zoomSlider = document.getElementById('zoomSlider');
-        const zoomVal = document.getElementById('zoomVal');
-        if(zoomSlider && zoomVal) { zoomSlider.value = 1.0; zoomVal.innerText = "1.0x"; }
-    }
+// メニューの構築
+if (typeof physicsData !== 'undefined') {
+    Object.keys(physicsData).forEach(key => {
+        const data = physicsData[key];
+        if (data.chap !== currentChap) {
+            chapGroup = document.createElement('div');
+            chapGroup.className = 'chapter-group';
+            const title = document.createElement('div');
+            title.className = 'chapter-title';
+            title.innerText = data.chap;
+            chapGroup.appendChild(title);
+            
+            chapUl = document.createElement('ul');
+            chapUl.className = 'chapter-list';
+            chapGroup.appendChild(chapUl);
+            menuList.appendChild(chapGroup);
+            currentChap = data.chap;
+        }
+        const li = document.createElement('li');
+        li.className = 'item';
+        li.innerText = data.title;
+        li.onclick = () => {
+            document.querySelectorAll('.chapter-list .item').forEach(el => el.classList.remove('active'));
+            li.classList.add('active');
+            document.getElementById('unit-title').innerText = data.title;
+            
+            const container = document.getElementById('formula-cards-container');
+            container.innerHTML = "";
+            data.formulas.forEach((f, idx) => {
+                const card = document.createElement('div');
+                card.className = "formula-card";
+                card.innerHTML = `<h3>${f.name}</h3><div class="math-box">${f.math}</div>
+                    <div class="desc-section"><strong>いつ使う？</strong><br>${f.usage}</div>
+                    <div class="desc-section"><strong>式の意味</strong><br>${f.reason}</div>`;
+                card.onclick = () => {
+                    document.querySelectorAll('.formula-card').forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    document.getElementById('sim-desc').innerText = f.simText;
+                    setAnimation(f.animType);
+                };
+                container.appendChild(card);
+                if(idx === 0) card.click();
+            });
+            if (window.MathJax) MathJax.typesetPromise();
+        };
+        chapUl.appendChild(li);
+    });
+    setTimeout(() => { const firstItem = document.querySelector('.chapter-list .item'); if(firstItem) firstItem.click(); }, 100);
+}
 
-    // コントロールパネルのイベント連動
-    const speedSlider = document.getElementById('speedSlider');
-    if(speedSlider) speedSlider.addEventListener('input', e => document.getElementById('speedVal').innerText = parseFloat(e.target.value).toFixed(2) + "x");
+// Canvas 設定
+const canvas = document.getElementById('sim-canvas');
+const ctx = canvas.getContext('2d');
+let animType = "";
+let isPlaying = true;
+let time = 0;
+let scale = 1.0, panX = 0, panY = 0;
+let isDragging = false, lastX = 0, lastY = 0;
+
+function resizeCanvas() { 
+    canvas.width = canvas.parentElement.clientWidth; 
+    canvas.height = canvas.parentElement.clientHeight; 
+}
+window.addEventListener('resize', resizeCanvas); 
+resizeCanvas();
+
+// 初期ロード時のズレ防止のため遅延リサイズ
+setTimeout(resizeCanvas, 50);
+
+function setAnimation(type) { 
+    animType = type; 
+    time = 0; 
+    scale = 1.0; 
+    panX = 0; 
+    panY = 0; 
     const zoomSlider = document.getElementById('zoomSlider');
-    if(zoomSlider) zoomSlider.addEventListener('input', e => { scale = parseFloat(e.target.value); document.getElementById('zoomVal').innerText = scale.toFixed(1) + "x"; });
-    const playBtn = document.getElementById('playBtn');
-    if(playBtn) playBtn.onclick = () => { isPlaying = !isPlaying; playBtn.innerText = isPlaying ? "⏸ 一時停止" : "▶️ 再生"; };
-    const resetBtn = document.getElementById('resetBtn');
-    if(resetBtn) resetBtn.onclick = () => setAnimation(animType);
+    const zoomVal = document.getElementById('zoomVal');
+    if(zoomSlider && zoomVal) { zoomSlider.value = 1.0; zoomVal.innerText = "1.0x"; }
+}
 
-    // マウスドラッグによる画面移動(Pan)
-    canvas.addEventListener('mousedown', e => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
-    canvas.addEventListener('mousemove', e => { if(isDragging) { panX += e.clientX - lastX; panY += e.clientY - lastY; lastX = e.clientX; lastY = e.clientY; } });
-    window.addEventListener('mouseup', () => isDragging = false);
-    // マウスホイールによる拡大縮小(Zoom)
-    canvas.addEventListener('wheel', e => { 
-        e.preventDefault(); 
-        scale = Math.max(0.4, Math.min(3.0, scale + (e.deltaY > 0 ? -0.1 : 0.1))); 
-        if(zoomSlider) zoomSlider.value = scale; 
-        if(document.getElementById('zoomVal')) document.getElementById('zoomVal').innerText = scale.toFixed(1) + "x"; 
-    }, { passive: false });
+// コントロールUI
+const speedSlider = document.getElementById('speedSlider');
+if(speedSlider) speedSlider.addEventListener('input', e => document.getElementById('speedVal').innerText = parseFloat(e.target.value).toFixed(2) + "x");
+const zoomSlider = document.getElementById('zoomSlider');
+if(zoomSlider) zoomSlider.addEventListener('input', e => { scale = parseFloat(e.target.value); document.getElementById('zoomVal').innerText = scale.toFixed(1) + "x"; });
+const playBtn = document.getElementById('playBtn');
+if(playBtn) playBtn.onclick = () => { isPlaying = !isPlaying; playBtn.innerText = isPlaying ? "⏸ 一時停止" : "▶️ 再生"; };
+const resetBtn = document.getElementById('resetBtn');
+if(resetBtn) resetBtn.onclick = () => setAnimation(animType);
 
-    // ----------------------------------------------------
-    // 【描画ユーティリティ】高精度物理ベクトル＆数式記号対応
-    // ----------------------------------------------------
-    function dLine(x1, y1, x2, y2, color, w=2, dash=[]) {
-        ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash);
-        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
-    }
-    function dA(x1, y1, x2, y2, color, label="", dashed=false) { 
-        dLine(x1, y1, x2, y2, color, 2, dashed ? [5,5] : []);
-        if(Math.abs(x1 - x2) < 0.5 && Math.abs(y1 - y2) < 0.5) return;
-        const a = Math.atan2(y2-y1, x2-x1);
-        ctx.beginPath(); ctx.moveTo(x2, y2); 
-        ctx.lineTo(x2 - 12*Math.cos(a-0.35), y2 - 12*Math.sin(a-0.35)); 
-        ctx.lineTo(x2 - 12*Math.cos(a+0.35), y2 - 12*Math.sin(a+0.35)); 
-        ctx.fillStyle = color; ctx.fill();
-        if(label) dMath(label, x2 + 14*Math.cos(a), y2 + 14*Math.sin(a) + 6, color);
-    }
-    function dC(x, y, r, color, fill=true) {
-        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
-        if(fill){ ctx.fillStyle = color; ctx.fill(); } else { ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke(); }
-    }
-    function dB(x, y, w, h, color) {
-        ctx.fillStyle = color; ctx.fillRect(x-w/2, y-h/2, w, h); 
-        ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 2; ctx.strokeRect(x-w/2, y-h/2, w, h);
-    }
-    function dAng(x, y, r, a1, a2, label, color) {
-        ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, r, a1, a2, false); ctx.closePath();
-        ctx.fillStyle = color + "20"; ctx.fill(); ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
-        let m = (a1+a2)/2; dMath(label, x + (r+15)*Math.cos(m) - 4, y + (r+15)*Math.sin(m) + 6, color);
-    }
-    function dTxt(t, x, y, c="#2c3e50", f="14px sans-serif") {
-        ctx.font = f; ctx.fillStyle = c; ctx.shadowColor = "rgba(255, 255, 255, 0.9)"; ctx.shadowBlur = 4;
-        ctx.fillText(t, x, y); ctx.shadowBlur = 0;
-    }
-    function dMath(t, x, y, c="#2c3e50", size=18) {
-        ctx.font = `italic ${size}px 'Times New Roman', serif`; ctx.fillStyle = c;
-        ctx.shadowColor = "rgba(255, 255, 255, 0.9)"; ctx.shadowBlur = 4;
-        ctx.fillText(t, x, y); ctx.shadowBlur = 0;
-    }
-    function dFormula(t, x, y) {
-        ctx.font = "italic 16px 'Times New Roman', serif"; const w = ctx.measureText(t).width + 26;
-        ctx.fillStyle = "rgba(255, 255, 255, 0.95)"; ctx.shadowColor = "rgba(0,0,0,0.1)"; ctx.shadowBlur = 4;
-        ctx.fillRect(x, y - 22, w, 30); ctx.shadowBlur = 0; ctx.strokeStyle = "#cbd5e0"; ctx.lineWidth = 1; ctx.strokeRect(x, y - 22, w, 30);
-        ctx.fillStyle = "#c0392b"; ctx.fillText(t, x + 13, y);
-    }
-    function drawAxis(ox, oy, w, h, xL, yL) {
-        dA(ox, oy, ox, oy-h, '#7f8c8d', yL); dA(ox, oy, ox+w, oy, '#7f8c8d', xL);
-        dMath("O", ox-14, oy+14, '#7f8c8d');
-    }
+// マウス操作
+canvas.addEventListener('mousedown', e => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
+canvas.addEventListener('mousemove', e => { if(isDragging) { panX += e.clientX - lastX; panY += e.clientY - lastY; lastX = e.clientX; lastY = e.clientY; } });
+window.addEventListener('mouseup', () => isDragging = false);
+canvas.addEventListener('wheel', e => { 
+    e.preventDefault(); 
+    scale = Math.max(0.5, Math.min(3.0, scale + (e.deltaY > 0 ? -0.1 : 0.1))); 
+    if(zoomSlider) zoomSlider.value = scale; 
+    if(document.getElementById('zoomVal')) document.getElementById('zoomVal').innerText = scale.toFixed(1) + "x"; 
+}, { passive: false });
 
-    // ==========================================================================
-    // 【物理コア演算ループ】全79公式対応・一対一独立物理ロジック
-    // ==========================================================================
-    function render() {
-        requestAnimationFrame(render);
-        try {
-            let speed = (speedSlider) ? parseFloat(speedSlider.value) : 1.0;
-            if(isPlaying) time += 0.02 * speed;
-            const w = canvas.width, h = canvas.height;
-            ctx.clearRect(0, 0, w, h); ctx.save();
-            ctx.translate(w/2 + panX, h/2 + panY); ctx.scale(scale, scale);
+// ====================================================
+// 描画ユーティリティ
+// ====================================================
+function dLine(x1, y1, x2, y2, color, w=2, dash=[]) {
+    ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash);
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+}
 
-            // 背景用精密方眼グリッド
-            ctx.lineWidth = 1;
-            for(let i=-1200; i<=1200; i+=25) { 
-                ctx.strokeStyle = (i%100===0) ? '#e2e8f0' : '#f7fafc'; 
-                dLine(i,-1200,i,1200,ctx.strokeStyle); dLine(-1200,i,1200,i,ctx.strokeStyle); 
-            }
+function dA(x1, y1, x2, y2, color, label="", dashed=false) { 
+    dLine(x1, y1, x2, y2, color, 2, dashed ? [5,5] : []);
+    if(x1 === x2 && y1 === y2) return;
+    const a = Math.atan2(y2-y1, x2-x1);
+    ctx.beginPath(); 
+    ctx.moveTo(x2, y2); 
+    ctx.lineTo(x2 - 12*Math.cos(a-0.4), y2 - 12*Math.sin(a-0.4)); 
+    ctx.lineTo(x2 - 12*Math.cos(a+0.4), y2 - 12*Math.sin(a+0.4)); 
+    ctx.fillStyle = color; ctx.fill();
+    if(label) dMath(label, x2 + 15*Math.cos(a), y2 + 15*Math.sin(a), color);
+}
 
-            if(!animType) { dTxt("シミュレーションを選択してください。", -120, 0, "#a0aec0"); ctx.restore(); return; }
+function dC(x, y, r, color, fill=true) {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+    if(fill){ ctx.fillStyle = color; ctx.fill(); } else { ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke(); }
+}
 
-            // ----------------------------------------------------
-            // 第1章 力学：直線運動・落体 (1〜10)
-            // ----------------------------------------------------
-            if (animType === "linear_constant_v") {
-                dFormula("v = v₀ (一定) ,  x = v₀t", -100, -130); dLine(-250, 40, 250, 40, '#7f8c8d', 4);
-                let v0 = 70, tc = time % 5, x = -200 + v0 * tc;
-                dB(x, 15, 50, 40, '#3498db'); dMath("m", x-8, 20, "white");
-                dA(x, -15, x + v0, -15, '#2980b9', 'v₀'); dA(-200, 60, x, 60, '#2ecc71', 'x');
-            }
-            else if (animType === "linear_accel_v") {
-                dFormula("v = v₀ + at", -70, -130); dLine(-250, 40, 250, 40, '#7f8c8d', 4);
-                let v0 = 20, a = 25, tc = time % 4, x = -200 + v0 * tc + 0.5 * a * tc * tc, v = v0 + a * tc;
-                dB(x, 15, 50, 40, '#3498db'); dMath("m", x-8, 20, "white");
-                dA(x, -15, x + v, -15, '#2980b9', 'v'); dA(x, -40, x + a * 2, -40, '#27ae60', 'a');
-            }
-            else if (animType === "linear_accel_x") {
-                dFormula("x = v₀t + 1/2 at²", -85, -130); dLine(-250, 40, 250, 40, '#7f8c8d', 4);
-                let v0 = 15, a = 30, tc = time % 3.8, x = -200 + v0 * tc + 0.5 * a * tc * tc;
-                dB(x, 15, 50, 40, '#3498db'); dA(-200, 60, x, 60, '#2ecc71', 'x'); dMath("v₀, a", x-15, -10);
-            }
-            else if (animType === "linear_accel_v2") {
-                dFormula("v² - v₀² = 2ax", -75, -130); dLine(-250, 40, 250, 40, '#7f8c8d', 4);
-                let v0 = 30, a = 35, tc = time % 3.5, x = -180 + v0 * tc + 0.5 * a * tc * tc, v = Math.sqrt(v0*v0 + 2*a*(x+180));
-                dB(x, 15, 50, 40, '#3498db'); dA(x, -15, x+v, -15, '#2980b9', 'v'); dA(-180, 60, x, 60, '#2ecc71', 'x');
-            }
-            else if (animType === "relative_velocity") {
-                dFormula("v_{AB} = v_B - v_A", -70, -130);
-                let tc = time % 4, xA = -200 + 80 * tc, xB = -200 + 40 * tc;
-                dB(xA, -10, 45, 30, '#e74c3c'); dMath("A", xA-6, -5, "white"); dA(xA, -35, xA+80, -35, '#c0392b', 'v_A');
-                dB(xB, 30, 45, 30, '#3498db'); dMath("B", xB-6, 35, "white"); dA(xB, 55, xB+40, 55, '#2980b9', 'v_B');
-                dA(xA, 10, xB, 10, '#9b59b6', 'v_{AB}');
-            }
-            else if (animType === "free_fall_y") {
-                dFormula("v = gt ,  y = 1/2 gt²", -95, -140); dLine(-80, -100, 80, -100, '#7f8c8d', 1, [4,4]);
-                let g = 98, tc = time % 2.5, y = -100 + 0.5 * g * tc * tc, v = g * tc;
-                dC(0, y, 16, '#e74c3c'); dA(30, y, 30, y + v, '#2980b9', 'v'); dA(-30, y, -30, y + g, '#27ae60', 'g'); dA(0, -100, 0, y, '#2ecc71', 'y');
-            }
-            else if (animType === "vertical_throw_down") {
-                dFormula("v = v₀ + gt ,  y = v₀t + 1/2 gt²", -135, -140); dLine(-80, -110, 80, -110, '#7f8c8d', 1, [4,4]);
-                let g = 80, v0 = 60, tc = time % 2.3, y = -110 + v0 * tc + 0.5 * g * tc * tc, v = v0 + g * tc;
-                dC(0, y, 16, '#e74c3c'); dA(30, y, 30, y + v, '#2980b9', 'v'); dA(-30, y, -30, y + g, '#27ae60', 'g');
-                dA(0, -110, 0, y, '#2ecc71', 'y'); dA(0, -140, 0, -115, '#8e44ad', 'v₀');
-            }
-            else if (animType === "vertical_throw_up") {
-                dFormula("v = v₀ - gt ,  y = v₀t - 1/2 gt²", -135, -140); dLine(-80, 100, 80, 100, '#7f8c8d', 1, [4,4]);
-                let g = 98, v0 = 140, tc = time % 3.2, y = 100 - (v0 * tc - 0.5 * g * tc * tc), v = v0 - g * tc;
-                dC(0, y, 16, '#e74c3c'); dA(30, y, 30, y - v, '#2980b9', 'v'); dA(-30, y, -30, y + g, '#27ae60', 'g'); dA(0, 100, 0, y, '#2ecc71', 'y');
-            }
-            else if (animType === "horizontal_projectile") {
-                dFormula("x = v₀t ,  y = 1/2 gt²", -95, -140); dLine(-220, -100, 220, -100, '#7f8c8d', 1, [4,4]);
-                let g = 80, v0 = 90, tc = time % 2.5, cx = -180 + v0 * tc, cy = -100 + 0.5 * g * tc * tc;
-                for(let i=0; i<tc; i+=0.08) dC(-180 + v0*i, -100 + 0.5*g*i*i, 3, 'rgba(231,76,60,0.3)');
-                dC(cx, cy, 15, '#e74c3c'); dA(cx, cy, cx + v0, cy, '#95a5a6', 'v_x'); dA(cx, cy, cx, cy + g * tc, '#95a5a6', 'v_y');
-                dA(cx, cy, cx + v0, cy + g * tc, '#2980b9', 'v');
-            }
-            else if (animType === "oblique_projectile") {
-                dFormula("x = (v₀ cosθ)t ,  y = (v₀ sinθ)t - 1/2 gt²", -180, -150); dLine(-230, 100, 230, 100, '#7f8c8d', 2);
-                let g = 90, v0 = 160, th = Math.PI / 4, v0x = v0 * Math.cos(th), v0y = v0 * Math.sin(th);
-                let tc = time % 2.8, cx = -200 + v0x * tc, cy = 100 - (v0y * tc - 0.5 * g * tc * tc);
-                for(let i=0; i<tc; i+=0.06) dC(-200 + v0x*i, 100 - (v0y*i - 0.5*g*i*i), 3, 'rgba(231,76,60,0.2)');
-                dC(cx, cy, 15, '#e74c3c'); dA(cx, cy, cx + v0x, cy - (v0y - g * tc), '#2980b9', 'v');
-                dA(-200, 100, -200 + v0x, 100 - v0y, '#8e44ad', 'v₀'); dAng(-200, 100, 35, -th, 0, "θ", "#e67e22");
-            }
+function dB(x, y, w, h, color) {
+    ctx.fillStyle = color; ctx.fillRect(x-w/2, y-h/2, w, h); 
+    ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 2; ctx.strokeRect(x-w/2, y-h/2, w, h);
+}
 
-            // ----------------------------------------------------
-            // 第2章 力学：力・摩擦・モーメント (11〜20)
-            // ----------------------------------------------------
-            else if (animType === "hookes_law") {
-                dFormula("F = kx", -40, -130);
-                let k_spring = 1.2, ext = Math.abs(Math.sin(time * 2.5)) * 90, sx = -100 + ext;
-                ctx.fillStyle='#7f8c8d'; ctx.fillRect(-160, 10, 15, 60); dLine(-145, 40, sx-25, 40, '#7f8c8d', 3);
-                dB(sx, 40, 50, 40, '#9b59b6'); dMath("m", sx-8, 45, "white");
-                dA(sx, 40, sx + ext * k_spring, 40, '#e74c3c', 'F'); dA(sx, 70, -100, 70, '#2ecc71', 'x');
-            }
-            else if (animType === "static_friction") {
-                dFormula("f \le \mu N", -45, -130); ctx.fillStyle='#7f8c8d'; ctx.fillRect(-200, 50, 400, 5);
-                let F_force = (time % 4) * 25, f_fric = F_force;
-                dB(0, 25, 60, 50, '#9b59b6'); dMath("m", -8, 30, "white");
-                dA(0, 25, F_force, 25, '#3498db', 'F'); dA(0, 48, -f_fric, 48, '#e67e22', 'f');
-                dA(0, 25, 0, 85, '#7f8c8d', 'mg'); dA(0, 25, 0, -35, '#2ecc71', 'N');
-            }
-            else if (animType === "kinetic_friction") {
-                dFormula("f' = \mu' N", -50, -130); ctx.fillStyle='#7f8c8d'; ctx.fillRect(-200, 50, 400, 5);
-                let tc = time % 3, v = 40 + tc * tc * 15, x = -150 + 50 * tc;
-                dB(x, 25, 60, 50, '#9b59b6'); dA(x, 25, x + v, 25, '#2980b9', 'v');
-                dA(x, 48, x - 50, 48, '#e67e22', "f'"); dA(x, 25, x, -35, '#2ecc71', 'N');
-            }
-            else if (animType === "buoyancy_archimedes") {
-                dFormula("F = \rho V g", -55, -130);
-                ctx.fillStyle='rgba(52, 152, 219, 0.25)'; ctx.fillRect(-150, -10, 300, 120); dLine(-150, -10, 150, -10, '#2980b9', 2);
-                let bob = Math.sin(time * 3) * 12, cy = 40 + bob;
-                dB(0, cy, 65, 55, '#e67e22'); dMath("V", -8, cy+5, "white");
-                dA(0, cy, 0, cy + 65, '#e74c3c', 'mg'); dA(0, cy, 0, cy - 65, '#2ecc71', 'F');
-            }
-            else if (animType === "torque_moment") {
-                dFormula("M = F l", -45, -140);
-                ctx.beginPath(); ctx.moveTo(0,40); ctx.lineTo(-15,65); ctx.lineTo(15,65); ctx.fillStyle='#7f8c8d'; ctx.fill();
-                ctx.fillStyle='#f39c12'; ctx.fillRect(-160, 25, 320, 10); dC(0, 30, 5, '#2c3e50');
-                dA(-130, 30, -130, 95, '#e74c3c', 'F₁'); dMath("l₁", -65, 18);
-                dA(110, 30, 110, -35, '#3498db', 'F₂'); dMath("l₂", 55, 18);
-            }
-            else if (animType === "center_of_mass") {
-                dFormula("x_G = (m₁x₁ + m₂x₂) / (m₁ + m₂)", -140, -130); dLine(-160, 20, 160, 20, '#cbd5e0', 4);
-                dC(-100, 20, 16, '#3498db'); dMath("m₁", -107, -3, "white"); dA(-100, 50, -100, 25, '#3498db', 'x₁', true);
-                dC(80, 20, 26, '#e74c3c'); dMath("m₂", 72, 25, "white"); dA(80, 50, 80, 25, '#e74c3c', 'x₂', true);
-                let xg = (-100 * 16 + 80 * 26) / (16 + 26);
-                dC(xg, 20, 6, '#2ecc71'); dA(xg, 50, xg, 25, '#2ecc71', 'x_G', true);
-            }
-            else if (animType === "momentum_conservation") {
-                dFormula("m₁v₁ + m₂v₂ = m₁v₁' + m₂v₂'", -150, -140); ctx.fillStyle='#cbd5e0'; ctx.fillRect(-250, 40, 500, 4);
-                let m1 = 3.0, m2 = 1.0, v1_i = 65, v2_i = -35, e = 0.5;
-                let v1_f = ((m1 - e*m2)*v1_i + (1+e)*m2*v2_i)/(m1+m2), v2_f = ((1+e)*m1*v1_i + (m2 - e*m1)*v2_i)/(m1+m2);
-                let tc = time % 4.5, t_col = 160 / (v1_i - v2_i), x1, x2, v1, v2;
-                if(tc < t_col) { x1 = -120 + v1_i*tc; x2 = 80 + v2_i*tc; v1 = v1_i; v2 = v2_i; }
-                else { let ta = tc - t_col; x1 = (-120 + v1_i*t_col) + v1_f*ta; x2 = (80 + v2_i*t_col) + v2_f*ta; v1 = v1_f; v2 = v2_f; }
-                dC(x1, 15, 25, '#3498db'); dMath("m₁", x1-11, 22, "white"); dA(x1, -15, x1 + v1, -15, '#2980b9', tc<t_col?'v₁':"v₁'");
-                dC(x2, 25, 15, '#e74c3c'); dMath("m₂", x2-9, 31, "white"); dA(x2, -10, x2 + v2, -10, '#c0392b', tc<t_col?'v₂':"v₂'");
-                let P_tot = m1*v1 + m2*v2; drawAxis(-200, -70, 400, 5, "Total P", ""); dLine(-200, -70, -200 + P_tot, -70, '#e67e22', 6);
-            }
-            else if (animType === "restitution_coefficient") {
-                dFormula("e = - (v₂' - v₁') / (v₂ - v₁)", -130, -130); ctx.fillStyle='#7f8c8d'; ctx.fillRect(-150, 50, 300, 5);
-                let tc = time % 4, h_top = 100, e_val = 0.7, g = 90;
-                let v_col = Math.sqrt(2 * g * h_top), t_col = v_col / g;
-                let y, v, lbl;
-                if(tc < t_col) { y = -50 + 0.5*g*tc*tc; v = g*tc; lbl="v"; }
-                else { let ta = tc - t_col, v_rebound = e_val * v_col; y = 50 - (v_rebound*ta - 0.5*g*ta*ta); v = -(v_rebound - g*ta); lbl="v'"; }
-                if(y > 50) { y = 50; v = 0; }
-                dC(0, y-15, 15, '#1abc9c'); dA(25, y-15, 25, y-15+v, '#2980b9', lbl); dMath("e", -40, 40);
-            }
-            else if (animType === "impulse_momentum") {
-                dFormula("m v' - m v = F \\Delta t", -110, -130);
-                let tc = time % 3.5, mx = -200 + tc * 110;
-                dC(mx, 10, 18, '#3498db'); dMath("m", mx-8, 16, "white"); dA(mx, -15, mx + 60, -15, '#2980b9', 'v');
-                if(mx > -40 && mx < 20) { dA(mx - 40, 10, mx - 10, 10, '#e74c3c', 'FΔt'); }
-            }
-            else if (animType === "work_definition") {
-                dFormula("W = F x \\cos\\theta", -70, -140); ctx.fillStyle='#7f8c8d'; ctx.fillRect(-220, 50, 440, 5);
-                let tc = time % 4, F = 70, th = Math.PI / 6, Fcos = F * Math.cos(th), a = Fcos / 2.0;
-                let disp = 0.5 * a * tc * tc, cx = -170 + disp;
-                dB(cx, 25, 55, 45, '#3498db'); dMath("m", cx-8, 30, "white");
-                dA(cx, 25, cx + Fcos, 25 - F * Math.sin(th), '#e74c3c', 'F'); dAng(cx, 25, 35, -th, 0, "θ", "#e67e22");
-                dA(cx, 25, cx + Fcos, 25, '#c0392b', 'F cosθ'); dA(-170, 65, cx, 65, '#2ecc71', 'x');
-            }
+function dAng(x, y, r, a1, a2, label, color) {
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, r, a1, a2, false); ctx.closePath();
+    ctx.fillStyle = color + "33"; ctx.fill(); ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.stroke();
+    let m = (a1+a2)/2; 
+    dMath(label, x + (r+20)*Math.cos(m) - 5, y + (r+20)*Math.sin(m) + 5, color);
+}
 
-            // ----------------------------------------------------
-            // 第3章 力学：エネルギー・円運動・振動 (21〜31)
-            // ----------------------------------------------------
-            else if (animType === "kinetic_energy") {
-                dFormula("1/2 mv² - 1/2 mv₀² = W", -120, -130); ctx.fillStyle='#cbd5e0'; ctx.fillRect(-200, 40, 400, 5);
-                let v0 = 20, W_work = time * 40, v = Math.sqrt(v0*v0 + 2*W_work), cx = -150 + time*50;
-                dB(cx, 15, 45, 40, '#3498db'); dA(cx, -15, cx+v, -15, '#2980b9', 'v'); dMath("W", cx-8, -35, '#e74c3c');
-            }
-            else if (animType === "potential_energy_g") {
-                dFormula("U = mgh", -45, -130);
-                let h_val = 90 - Math.abs(Math.sin(time)*90), cy = 60 - h_val;
-                dLine(-100, 60, 100, 60, '#7f8c8d', 2); dC(0, cy, 15, '#9b59b6');
-                dA(0, 60, 0, cy, '#2ecc71', 'h', true); dMath("m, g", 25, cy);
-            }
-            else if (animType === "potential_energy_e") {
-                dFormula("U = 1/2 kx²", -55, -130);
-                let ext = Math.sin(time * 3) * 60;
-                dB(ext, 20, 45, 40, '#9b59b6'); dLine(-120, 20, ext - 22, 20, '#7f8c8d', 2);
-                dA(0, 50, ext, 50, '#2ecc71', 'x'); dMath("k", -60, 0);
-            }
-            else if (animType === "mechanical_energy_conservation") {
-                dFormula("E = 1/2 mv² + mgh = 一定", -140, -150);
-                let L = 150, g = 140, th0 = 0.6, om = Math.sqrt(g/L), th = th0 * Math.cos(om * time);
-                let cx = L * Math.sin(th), cy = -110 + L * Math.cos(th), v_s = -L * th0 * om * Math.sin(om * time);
-                dLine(0, -110, cx, cy, '#2c3e50', 2); dC(cx, cy, 16, '#9b59b6');
-                dA(cx, cy, cx + v_s * Math.cos(th), cy - v_s * Math.sin(th), '#2980b9', 'v');
-                let h_curr = L * (1 - Math.cos(th)), U = 1.0 * g * h_curr, K = 0.5 * v_s * v_s, E = U + K;
-                drawAxis(130, 40, 90, 110, "", "E");
-                ctx.fillStyle='#2ecc71'; ctx.fillRect(145, 40, 20, -U*0.35); ctx.fillStyle='#2980b9'; ctx.fillRect(170, 40, 20, -K*0.35);
-                ctx.fillStyle='#8e44ad'; ctx.fillRect(195, 40, 20, -E*0.35); dMath("E", 198, 55, '#8e44ad');
-            }
-            else if (animType === "circular_motion_v") {
-                dFormula("v = r\\omega ,  a = r\\omega²", -100, -140);
-                let r = 75, om = 1.8, ang = time * om, cx = r * Math.cos(ang), cy = r * Math.sin(ang);
-                dC(0, 0, r, '#cbd5e0', false); dLine(0, 0, cx, cy, '#7f8c8d', 1);
-                dC(cx, cy, 14, '#3498db'); dA(cx, cy, cx - 60 * Math.sin(ang), cy + 60 * Math.cos(ang), '#2980b9', 'v');
-                dA(cx, cy, cx - 40 * Math.cos(ang), cy - 40 * Math.sin(ang), '#27ae60', 'a');
-            }
-            else if (animType === "centripetal_force") {
-                dFormula("F = m v² / r = m r\\omega²", -120, -140);
-                let r = 80, ang = time * 2, cx = r * Math.cos(ang), cy = r * Math.sin(ang);
-                dC(0, 0, r, '#cbd5e0', false); dLine(0, 0, cx, cy, '#7f8c8d');
-                dC(cx, cy, 14, '#3498db'); dA(cx, cy, 0, 0, '#e74c3c', 'F'); dMath("m", cx-5, cy-18);
-            }
-            else if (animType === "shm_displacement") {
-                dFormula("x = A \\sin(\\omega t)", -75, -140); drawAxis(-150, 0, 300, 90, "t", "x");
-                let A = 60, om = 2.5, cx = A * Math.sin(om * time);
-                dC(0, cx, 14, '#2ecc71'); dA(0, 0, 0, cx, '#e74c3c', 'x');
-                ctx.beginPath(); ctx.strokeStyle='#2ecc71'; ctx.lineWidth=2;
-                for(let i=0; i<160; i++) ctx.lineTo(i, A * Math.sin(om * time - i * 0.04)); ctx.stroke();
-            }
-            else if (animType === "spring_pendulum") {
-                dFormula("T = 2\\pi \\sqrt{m/k}", -90, -130);
-                let ext = Math.cos(time * 3.5) * 60;
-                dB(ext, 20, 50, 45, '#9b59b6'); dLine(-150, 20, ext-25, 20, '#7f8c8d', 2);
-                dMath("T", 0, -20); dMath("m, k", ext-15, 65);
-            }
-            else if (animType === "simple_pendulum") {
-                dFormula("T = 2\\pi \\sqrt{L/g}", -90, -140);
-                let th = 0.5 * Math.cos(3 * time), cx = 130 * Math.sin(th), cy = -100 + 130 * Math.cos(th);
-                dLine(0, -100, cx, cy, '#2c3e50', 2); dC(cx, cy, 15, '#9b59b6'); dMath("L, g", -40, -40);
-            }
-            else if (animType === "universal_gravitation") {
-                dFormula("F = G M m / r²", -85, -140);
-                let r = 130 + Math.sin(time)*30, cx = r / 2, fx = 30000 / (r * r);
-                dC(-cx, 0, 28, '#f39c12'); dMath("M", -cx-8, 6, "white"); dA(-cx, 0, -cx + fx, 0, '#e74c3c', 'F');
-                dC(cx, 0, 15, '#3498db'); dMath("m", cx-6, 5, "white"); dA(cx, 0, cx - fx, 0, '#e74c3c', 'F');
-                dLine(-cx, 40, cx, 40, '#7f8c8d', 1, [4,4]); dMath("r", 0, 35);
-            }
-            else if (animType === "kepler_second") {
-                dFormula("\\text{面積速度} = 一定", -70, -140);
-                let a = 120, b = 70, e = Math.sqrt(1 - (b*b)/(a*a)), focal = a * e;
-                dC(-focal, 0, 18, '#f1c40f'); dMath("M", -focal-7, 5, "white");
-                let ang = time * 1.5, r_rad = (a * (1 - e*e)) / (1 + e * Math.cos(ang));
-                let px = r_rad * Math.cos(ang) - focal, py = r_rad * Math.sin(ang);
-                dC(px, py, 10, '#3498db'); dLine(-focal, 0, px, py, 'rgba(52,152,219,0.3)', 1.5);
-                ctx.beginPath(); ctx.moveTo(-focal,0); for(let i=0; i<0.3; i+=0.02) { let r_i = (a*(1-e*e))/(1+e*Math.cos(ang-i)); ctx.lineTo(r_i*Math.cos(ang-i)-focal, r_i*Math.sin(ang-i)); } ctx.closePath(); ctx.fillStyle='rgba(46,204,113,0.18)'; ctx.fill();
-                dA(px, py, px - 40*Math.sin(ang), py + 40*Math.cos(ang), '#2980b9', 'v');
-            }
+function dTxt(t, x, y, c="#2c3e50", f="16px 'Hiragino Sans', Arial, sans-serif") {
+    ctx.font = f;
+    ctx.fillStyle = c;
+    ctx.shadowColor = "rgba(255, 255, 255, 0.9)";
+    ctx.shadowBlur = 5;
+    ctx.fillText(t, x, y);
+    ctx.shadowBlur = 0; 
+}
 
-            // ----------------------------------------------------
-            // 第4章 熱力学 (32〜39)
-            // ----------------------------------------------------
-            else if (animType === "heat_capacity") {
-                dFormula("Q = m c \\Delta T", -65, -130);
-                ctx.fillStyle = 'rgba(230, 126, 34, 0.15)'; ctx.fillRect(-100, -50, 200, 100); ctx.strokeRect(-100, -50, 200, 100);
-                let dT = Math.min(80, time * 15); dTxt("Temp: +" + dT.toFixed(1) + " K", -45, 10, '#e67e22', "16px serif");
-                dA(0, 90, 0, 55, '#e74c3c', 'Q'); dMath("m, c", -90, -30);
-            }
-            else if (animType === "boyles_law") {
-                dFormula("p V = \\text{一定}", -60, -130);
-                let V_vol = 80 + Math.sin(time * 2) * 40, p_press = 2000 / V_vol;
-                ctx.strokeRect(-100, -50, V_vol, 100); ctx.fillStyle='#cbd5e0'; ctx.fillRect(-100+V_vol, -50, 10, 100);
-                dA(-100+V_vol+30, 0, -100+V_vol, 0, '#e74c3c', 'p'); dMath("V", -80, 20);
-                for(let i=0; i<15; i++) dC(-100 + Math.abs(Math.sin(i+time*4))*V_vol, -40+Math.abs(Math.cos(i*2))*80, 4, '#e67e22');
-            }
-            else if (animType === "charles_law") {
-                dFormula("V / T = \\text{一定}", -65, -130);
-                let T_temp = 100 + (time % 4) * 40, V_vol = T_temp * 0.8;
-                ctx.strokeRect(-120, -50, V_vol, 100); ctx.fillStyle='#cbd5e0'; ctx.fillRect(-120+V_vol, -50, 10, 100);
-                dMath("V", -100, 20); dTxt("T = " + T_temp.toFixed(0) + " K", -110, -60, '#c0392b');
-                for(let i=0; i<15; i++) dC(-120 + Math.abs(Math.sin(i+time*(T_temp*0.02)))*V_vol, -40+Math.abs(Math.cos(i*3))*80, 4, '#3498db');
-            }
-            else if (animType === "ideal_gas_law") {
-                dFormula("p V = n R T", -65, -140); ctx.strokeRect(-100, -50, 180, 100); dMath("p, V, n, T", -40, 10);
-                for(let i=0; i<25; i++) dC(-100 + Math.abs(Math.sin(i+time*3.5))*180, -45+Math.abs(Math.cos(i*4))*90, 4, '#e67e22');
-            }
-            else if (animType === "gas_kinetic_theory") {
-                dFormula("p = N m v_x² / V", -75, -130); ctx.strokeRect(-100, -60, 200, 120);
-                let px = -100 + Math.abs(Math.sin(time * 5)) * 200;
-                dC(px, 0, 7, '#e74c3c'); dA(px, 0, px + (Math.cos(time*5)>0?40:-40), 0, '#2980b9', 'v_x');
-                dMath("m", px-5, -15); dMath("V", 70, 50);
-            }
-            else if (animType === "internal_energy") {
-                dFormula("U = 3/2 n R T", -75, -130); ctx.strokeRect(-90, -50, 180, 100);
-                let T_val = 150 + Math.sin(time)*50; dTxt("U ∝ T (" + T_val.toFixed(0) + "K)", -50, -60, '#9b59b6');
-                for(let i=0; i<20; i++) {
-                    let sp = T_val * 0.03; dC(-90 + Math.abs(Math.sin(i+time*sp))*180, -45+Math.abs(Math.cos(i*2+time*sp))*90, 4, '#34495e');
-                }
-            }
-            else if (animType === "first_law_thermodynamics") {
-                dFormula("\\Delta U = Q + W", -70, -130); ctx.strokeRect(-90, -50, 180, 100); dMath("  U", -15, 10);
-                dA(0, 90, 0, 55, '#e74c3c', 'Q'); dA(130, 0, 95, 0, '#3498db', 'W');
-            }
-            else if (animType === "gas_work_p_delta_v") {
-                dFormula("W = p \\Delta V", -60, -130); let expan = Math.min(60, (time%4)*20);
-                ctx.strokeRect(-100, -50, 100 + expan, 100); ctx.fillStyle='#e74c3c'; ctx.fillRect(expan, -50, 8, 100);
-                dA(expan, 0, expan + 40, 0, '#2ecc71', 'W'); dMath("p", expan-25, -25); dMath("\\Delta V", expan/2, 20);
-            }
+function dMath(t, x, y, c="#2c3e50", size=20) {
+    ctx.font = `italic ${size}px 'Times New Roman', serif`;
+    ctx.fillStyle = c;
+    ctx.shadowColor = "rgba(255, 255, 255, 0.9)";
+    ctx.shadowBlur = 5;
+    ctx.fillText(t, x, y);
+    ctx.shadowBlur = 0;
+}
 
-            // ----------------------------------------------------
-            // 第5章 波動 (40〜53)
-            // ----------------------------------------------------
-            else if (animType === "wave_equation") {
-                dFormula("v = f \\lambda", -45, -140); drawAxis(-200, 0, 400, 70, "x", "y");
-                ctx.beginPath(); ctx.strokeStyle='#9b59b6'; ctx.lineWidth=3;
-                for(let x=-200; x<=200; x+=4) ctx.lineTo(x, Math.sin(x * 0.04 - time * 4) * 45); ctx.stroke();
-                dA(-39, -60, 118, -60, '#2980b9', 'λ'); dLine(-39,-50,-39,-70,'#2980b9',1); dLine(118,-50,118,-70,'#2980b9',1); dMath("v, f", 0, 70);
-            }
-            else if (animType === "transverse_wave_motion") {
-                dFormula("v_y = \\text{媒質の速度ベクトル}", -120, -140);
-                ctx.beginPath(); ctx.strokeStyle='#cbd5e0'; ctx.lineWidth=1;
-                for(let x=-200; x<=200; x+=5) ctx.lineTo(x, Math.sin(x*0.04 - time*4)*50); ctx.stroke();
-                for(let x=-150; x<=150; x+=50) {
-                    let py = Math.sin(x*0.04 - time*4)*50, vy = -200 * 0.04 * Math.cos(x*0.04 - time*4);
-                    dC(x, py, 6, '#e74c3c'); dA(x, py, x, py + vy * 0.4, '#e74c3c', 'v_y');
-                }
-            }
-            else if (animType === "longitudinal_wave_motion") {
-                dFormula("\\text{疎密波の可視化}", -70, -140);
-                dTxt("密", -150, -50, '#e74c3c'); dTxt("疎", -75, -50, '#2980b9'); dTxt("密", 0, -50, '#e74c3c');
-                for(let x=-200; x<=200; x+=12) {
-                    let dx = Math.sin(x * 0.04 - time * 4) * 22; dLine(x + dx, -30, x + dx, 30, 'rgba(52,152,219,0.5)', 2);
-                    if(x===0 || x===-96) dC(x+dx, 0, 5, '#e74c3c');
-                }
-            }
-            else if (animType === "wave_interference") {
-                dFormula("l₁ - l₂ = m \\lambda", -75, -140);
-                dC(-80, 0, 6, '#e74c3c'); dMath("S₁", -90, -15); dC(80, 0, 6, '#3498db'); dMath("S₂", 80, -15);
-                let px = Math.sin(time)*140, py = Math.cos(time)*40 + 50; dC(px, py, 8, '#2ecc71'); dMath("P", px+10, py);
-                dLine(-80, 0, px, py, '#e74c3c', 1.5, [4,4]); dLine(80, 0, px, py, '#3498db', 1.5, [4,4]);
-            }
-            else if (animType === "stationary_wave_string") {
-                dFormula("f = v / 2L", -45, -130); let amp = Math.sin(time * 5) * 45;
-                ctx.beginPath(); ctx.strokeStyle='#9b59b6'; ctx.lineWidth=3;
-                for(let x=-150; x<=150; x+=5) ctx.lineTo(x, Math.sin((x+150)*Math.PI/150) * amp); ctx.stroke();
-                dLine(-150, -10, -150, 10, '#2c3e50', 4); dLine(150, -10, 150, 10, '#2c3e50', 4);
-                dA(-150, 60, 150, 60, '#2ecc71', 'L'); dMath("v", 0, -60);
-            }
-            else if (animType === "stationary_wave_pipe_open") {
-                dFormula("f = v / 2L  (\\text{開管})", -100, -130);
-                dLine(-120, -30, 120, -30, '#7f8c8d', 3); dLine(-120, 30, 120, 30, '#7f8c8d', 3);
-                let amp = Math.sin(time * 4) * 25;
-                ctx.beginPath(); ctx.strokeStyle='#3498db'; ctx.lineWidth=2; for(let x=-120; x<=120; x+=4) ctx.lineTo(x, Math.cos((x+120)*Math.PI/120)*amp); ctx.stroke();
-                ctx.beginPath(); ctx.strokeStyle='#3498db'; ctx.lineWidth=2; for(let x=-120; x<=120; x+=4) ctx.lineTo(x, -Math.cos((x+120)*Math.PI/120)*amp); ctx.stroke();
-                dA(-120, 48, 120, 48, '#2ecc71', 'L');
-            }
-            else if (animType === "stationary_wave_pipe_closed") {
-                dFormula("f = v / 4L  (\\text{閉管})", -100, -130);
-                dLine(-120, -30, 120, -30, '#7f8c8d', 3); dLine(-120, 30, 120, 30, '#7f8c8d', 3); dLine(120, -30, 120, 30, '#2c3e50', 5);
-                let amp = Math.sin(time * 4) * 25;
-                ctx.beginPath(); ctx.strokeStyle='#e74c3c'; ctx.lineWidth=2; for(let x=-120; x<=120; x+=4) ctx.lineTo(x, Math.cos((x+120)*Math.PI/240)*amp); ctx.stroke();
-                ctx.beginPath(); ctx.strokeStyle='#e74c3c'; ctx.lineWidth=2; for(let x=-120; x<=120; x+=4) ctx.lineTo(x, -Math.cos((x+120)*Math.PI/240)*amp); ctx.stroke();
-                dA(-120, 48, 120, 48, '#2ecc71', 'L');
-            }
-            else if (animType === "doppler_effect_source") {
-                dFormula("f' = f  V / (V - v_s)", -100, -140);
-                let vs = 35, tc = time % 3.5, sx = -120 + vs * tc;
-                dC(sx, 0, 8, '#e74c3c'); dA(sx, 0, sx + 50, 0, '#c0392b', 'v_s');
-                for(let i=1; i<=3; i++) { if(tc > i*0.5) dC(-120 + vs*i*0.5, 0, (tc - i*0.5)*80, 'rgba(52,152,219,0.3)', false); }
-                dC(120, 0, 12, '#2ecc71'); dMath("Obs", 110, 25); dMath("V", -50, -70);
-            }
-            else if (animType === "doppler_effect_observer") {
-                dFormula("f' = f  (V - v_o) / V", -100, -140);
-                let vo = -30, tc = time % 4, ox = 150 + vo * tc;
-                dC(0, 0, 10, '#3498db'); dMath("Source", -25, -20);
-                for(let i=1; i<=4; i++) dC(0, 0, (time*55) % 180, 'rgba(52,152,219,0.15)', false);
-                dC(ox, 0, 10, '#2ecc71'); dA(ox, 0, ox + vo*1.2, 0, '#27ae60', 'v_o');
-            }
-            else if (animType === "reflection_refraction_law") {
-                dFormula("\\sin i / \\sin r = n_{12}", -90, -160);
-                ctx.fillStyle='rgba(52,152,219,0.15)'; ctx.fillRect(-200, 0, 400, 150); dLine(-200, 0, 200, 0, '#2c3e50', 2);
-                dLine(0, -120, 0, 120, '#cbd5e0', 1, [4,4]);
-                let th_i = Math.PI/4, th_r = Math.PI/7;
-                dA(-100*Math.sin(th_i), -100*Math.cos(th_i), 0, 0, '#f1c40f', '入射光');
-                dA(0, 0, 120*Math.sin(th_r), 120*Math.cos(th_r), '#e67e22', '屈折光');
-                dAng(0, 0, 35, -Math.PI/2, -Math.PI/2+th_i, "i", "#e74c3c"); dAng(0, 0, 45, Math.PI/2-th_r, Math.PI/2, "r", "#2980b9");
-                dMath("n₁", -170, -20); dMath("n₂", -170, 30);
-            }
-            else if (animType === "total_reflection") {
-                dFormula("\\sin i₀ = n₂ / n₁", -70, -160);
-                ctx.fillStyle='rgba(155, 89, 182, 0.12)'; ctx.fillRect(-200, 0, 400, 150); dLine(-200, 0, 200, 0, '#2c3e50', 2);
-                dLine(0, -120, 0, 120, '#cbd5e0', 1, [4,4]); dMath("n₁ (大)", -170, 30); dMath("n₂ (小)", -170, -20);
-                let th_c = Math.asin(1.5 / 2.3), rot = th_c + Math.sin(time)*0.15;
-                dA(-110*Math.sin(rot), 110*Math.cos(rot), 0, 0, '#f1c40f', '光');
-                if(rot > th_c) { dA(0, 0, 110*Math.sin(rot), 110*Math.cos(rot), '#f1c40f', '全反射'); }
-                else { dA(0, 0, 110*Math.sin(rot*1.4), -110*Math.cos(rot*1.4), '#e67e22', '屈折'); }
-            }
-            else if (animType === "thin_film_interference") {
-                dFormula("2nd \\cos r = m \\lambda", -100, -140);
-                ctx.fillStyle='rgba(46,204,113,0.15)'; ctx.fillRect(-150, -20, 300, 40);
-                dLine(-150, -20, 150, -20, '#2c3e50'); dLine(-150, 20, 150, 20, '#2c3e50');
-                dA(-120, -70, -60, -20, '#f1c40f', '入射'); dLine(-60, -20, 0, 20, '#f1c40f');
-                dLine(0, 20, 60, -20, '#f1c40f'); dA(-60, -20, 0, -70, '#e67e22', '干渉光');
-                dA(160, -20, 160, 20, '#2ecc71', 'd'); dMath("n", -130, 5);
-            }
-            else if (animType === "young_double_slit") {
-                dFormula("d x / L = m \\lambda", -80, -150);
-                dLine(-160, -60, -160, 60, '#2c3e50', 4); dC(-160, -25, 4, 'white'); dC(-160, 25, 4, 'white');
-                dLine(100, -100, 100, 100, '#7f8c8d', 2);
-                let py = Math.sin(time*0.5)*70; dC(100, py, 6, '#e74c3c'); dMath("x", 115, py);
-                dLine(-160, -25, 100, py, '#f1c40f', 1); dLine(-160, 25, 100, py, '#f1c40f', 1);
-                dA(-155, 75, 100, 75, '#2ecc71', 'L'); dA(-172, -25, -172, 25, '#9b59b6', 'd');
-            }
-            else if (animType === "convex_lens_equation") {
-                dFormula("1/a + 1/b = 1/f", -65, -140); dLine(-220, 0, 220, 0, '#7f8c8d', 1.5); dA(0, -90, 0, 90, '#3498db');
-                dA(-130, 0, -130, -50, '#e74c3c', '物'); dA(90, 0, 90, 34.6, '#e67e22', '像');
-                dLine(-130, -50, 0, -50, '#f1c40f'); dLine(0, -50, 90, 34.6, '#f1c40f');
-                dLine(-130, -50, 90, 34.6, '#f1c40f'); dC(52.5, 0, 3.5, '#2c3e50'); dMath("f", 52, -15);
-                dMath("a", -65, 18); dMath("b", 45, 18);
-            }
+function dFormula(t, x, y) {
+    ctx.font = "italic 18px 'Times New Roman', serif";
+    const w = ctx.measureText(t).width + 30;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+    ctx.shadowColor = "rgba(0,0,0,0.15)";
+    ctx.shadowBlur = 6;
+    ctx.fillRect(x, y - 22, w, 32);
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "#bdc3c7";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y - 22, w, 32);
+    ctx.fillStyle = "#c0392b";
+    ctx.fillText(t, x + 15, y);
+}
 
-            // ----------------------------------------------------
-            // 第6章 電磁気 (54〜73)
-            // ----------------------------------------------------
-            else if (animType === "coulombs_law") {
-                dFormula("F = k q₁q₂ / r²", -75, -130);
-                let r = 110 + Math.sin(time * 2) * 30, F = 35000 / (r * r);
-                dC(-r/2, 0, 18, '#e74c3c'); dMath("+q₁", -r/2-15, -25); dA(-r/2, 0, -r/2 - F, 0, '#e74c3c', 'F');
-                dC(r/2, 0, 18, '#3498db'); dMath("-q₂", r/2-12, -25); dA(r/2, 0, r/2 - F, 0, '#3498db', 'F');
-                dLine(-r/2, 30, r/2, 30, '#cbd5e0', 1, [4,4]); dMath("r", 0, 25);
-            }
-            else if (animType === "electric_field_e") {
-                dFormula("F = qE", -40, -130);
-                for(let x=-150; x<=150; x+=50) dA(x, -40, x, 40, '#2ecc71'); dMath("E", 170, 0, '#2ecc71');
-                let qy = Math.sin(time*2.5)*35; dC(-40, qy, 12, '#e74c3c'); dMath("+q", -65, qy+4); dA(-40, qy, -40, qy + 45, '#e74c3c', 'F');
-            }
-            else if (animType === "electric_potential_v") {
-                dFormula("U = qV", -40, -130); drawAxis(-100, 60, 200, 100, "x", "V");
-                dLine(-100, 60, 100, -20, '#9b59b6', 3); dMath("傾き E", 10, -35, '#9b59b6');
-                let qx = -100 + (time%4)*50, qy = 60 - (qx+100)*0.4;
-                dC(qx, qy, 10, '#e74c3c'); dA(qx, qy, qx, 60, '#2ecc71', 'V', true); dMath("U", qx-5, qy-15);
-            }
-            else if (animType === "capacitor_capacitance") {
-                dFormula("C = \\varepsilon S / d", -70, -130);
-                dLine(-80, -40, 80, -40, '#e74c3c', 6); dMath("+Q (S)", -115, -35);
-                dLine(-80, 40, 80, 40, '#3498db', 6); dMath("-Q (S)", -115, 45);
-                dA(100, -40, 100, 40, '#7f8c8d', 'd'); dMath("C, ε", 0, -55);
-                for(let i=-60; i<=60; i+=30) dA(i, -32, i, 32, '#2ecc71');
-            }
-            else if (animType === "capacitor_energy") {
-                dFormula("U = 1/2 C V²", -65, -130); let V_volt = Math.abs(Math.sin(time))*90, U_en = 0.004 * V_volt * V_volt;
-                drawAxis(-50, 60, 120, 100, "V", "U");
-                ctx.fillStyle='#9b59b6'; ctx.fillRect(40, 60, 30, -U_en); dMath("U", 45, 85, '#9b59b6');
-                dTxt("V = " + V_volt.toFixed(1) + " V", -40, -60); dMath("C", -40, -35);
-            }
-            else if (animType === "ohms_law") {
-                dFormula("V = R I", -45, -130); dLine(-120, 0, 120, 0, '#2c3e50', 2); dB(0, 0, 60, 30, '#cbd5e0'); dMath("R", -7, 5);
-                let tc = time % 3, cx = -120 + tc * 80; dC(cx, 0, 5, '#e67e22');
-                dA(-100, -25, -50, -25, '#e67e22', 'I'); dTxt("Voltage: V", -35, 40);
-            }
-            else if (animType === "resistivity_dependence") {
-                dFormula("R = \\rho l / S", -60, -130); dB(0, 0, 160, 35, '#e67e22'); dMath("S", 95, 5);
-                dA(-80, -30, 80, -30, '#7f8c8d', 'l'); dMath("R, ρ", -10, 40);
-            }
-            else if (animType === "joule_heating") {
-                dFormula("Q = R I² t", -55, -130); dB(0, 0, 70, 35, '#7f8c8d'); dMath("R", -6, 6, "white");
-                let Q_val = time * 25; dTxt("Joule Heat Q: " + Q_val.toFixed(0) + " J", -65, 45, '#e74c3c');
-                for(let i=0; i<6; i++) dA(-40+i*16, -25, -40+i*16+5, -50, '#e74c3c');
-            }
-            else if (animType === "kirchhoff_laws") {
-                dFormula("\\sum V = 0", -50, -140); ctx.strokeRect(-90, -50, 180, 100);
-                dLine(-15, -50, -15, -35, '#c0392b', 4); dLine(15, -56, 15, -29, '#2c3e50', 2);
-                dB(-90, 0, 20, 40, '#cbd5e0'); dMath("R₁", -125, 5); dB(90, 0, 20, 40, '#cbd5e0'); dMath("R₂", 105, 5);
-                dC(-90 + (time*50)%180, -50, 4, '#e67e22'); dMath("E", -3, -65);
-            }
-            else if (animType === "magnetic_field_current") {
-                dFormula("H = I / 2\\pi r", -65, -130); dLine(0, -90, 0, 90, '#2c3e50', 4); dA(0, 40, 0, -50, '#e67e22', 'I');
-                ctx.save(); ctx.scale(1, 0.4); dC(0, 0, 70, '#2ecc71', false); ctx.restore();
-                dA(55, 12, 45, -10, '#2ecc71', 'H'); dLine(0, 0, 70, 0, '#7f8c8d', 1, [3,3]); dMath("r", 35, -5);
-            }
-            else if (animType === "ampere_force") {
-                dFormula("F = I B l", -45, -130);
-                for(let i=-2; i<=2; i++) dA(i*35, -60, i*35, 40, '#2ecc71'); dMath("B", 95, -45, '#2ecc71');
-                dLine(-80, -10, 80, -10, '#2c3e50', 4); dMath("l", 50, -25);
-                dA(0, -10, 35, -10, '#e67e22', 'I'); dA(0, -10, 0, -65, '#e74c3c', 'F');
-            }
-            else if (animType === "lorentz_force_motion") {
-                dFormula("F = q v B", -45, -140);
-                for(let x=-80; x<=80; x+=40) { for(let y=-80; y<=80; y+=40) dMath("×", x, y, '#2ecc71', 16); }
-                let r = 65, ang = time * 2.5, cx = r * Math.cos(ang), cy = r * Math.sin(ang);
-                dC(cx, cy, 9, '#3498db'); dA(cx, cy, cx - 40*Math.sin(ang), cy + 40*Math.cos(ang), '#2980b9', 'v');
-                dA(cx, cy, cx - 35*Math.cos(ang), cy - 35*Math.sin(ang), '#e74c3c', 'F'); dMath("q, B", 110, -70);
-            }
-            else if (animType === "faradays_law_induction") {
-                dFormula("V = - N \\Delta\\Phi / \\Delta t", -95, -130); let my = Math.sin(time*2)*40 - 20;
-                dB(0, my - 30, 35, 50, '#e74c3c'); dMath("N", -6, my-40, "white");
-                ctx.strokeRect(-50, 40, 100, 30); dA(0, my, 0, my+25, '#3498db', 'v');
-                let V_ind = -40 * Math.cos(time*2); dTxt("V = " + V_ind.toFixed(1) + " V", 65, 60, '#9b59b6');
-            }
-            else if (animType === "induced_emf_conductor") {
-                dFormula("V = v B l", -45, -130); dLine(-120, -45, 120, -45, '#7f8c8d', 2); dLine(-120, 45, 120, 45, '#7f8c8d', 2);
-                let rx = -100 + (time%4.5)*45; dLine(rx, -45, rx, 45, '#e74c3c', 4);
-                dA(rx, 0, rx + 40, 0, '#2980b9', 'v'); dMath("l", rx - 15, -20); dMath("B", -100, -65, '#2ecc71');
-            }
-            else if (animType === "self_induction") {
-                dFormula("V = - L \\Delta I / \\Delta t", -90, -130); ctx.beginPath(); ctx.lineWidth=3; ctx.strokeStyle='#2c3e50';
-                for(let i=0; i<10; i++) ctx.arc(-60+i*13, 0, 10, 0, Math.PI, true); ctx.stroke();
-                dMath("L", 0, -20); let dI = Math.cos(time * 3) * 20;
-                dA(-80, 25, -40, 25, '#e67e22', 'I'); dTxt("V = " + (-2.5*dI).toFixed(1) + " V", -30, 45, '#c0392b');
-            }
-            else if (animType === "ac_generation") {
-                dFormula("V = V₀ \\sin(\\omega t)", -75, -140); let rot = time * 2, py = 50 * Math.sin(rot);
-                dLine(-140, 0, -60, 0, '#cbd5e0', 2); dLine(-100, -40, -100, 40, '#cbd5e0', 1, [3,3]);
-                dA(-100, 0, -100 + 40*Math.cos(rot), -py, '#3498db', 'コイル');
-                drawAxis(20, 0, 160, 60, "t", "V"); dC(20, -py, 5, '#e74c3c');
-                ctx.beginPath(); ctx.strokeStyle='#e74c3c'; ctx.lineWidth=2;
-                for(let i=0; i<140; i++) ctx.lineTo(20+i, 50*Math.sin(rot - i*0.06)); ctx.stroke();
-            }
-            else if (animType === "ac_resistor") {
-                dFormula("I = V / R", -40, -140); drawAxis(0, 0, 100, 100, "Re", "Im");
-                let rot = time * 2.2; dA(0, 0, 85 * Math.cos(rot), 85 * Math.sin(rot), '#e74c3c', 'V');
-                dA(0, 0, 55 * Math.cos(rot), 55 * Math.sin(rot), '#3498db', 'I');
-            }
-            else if (animType === "ac_capacitor") {
-                dFormula("X_C = 1 / \\omega C", -55, -140); drawAxis(0, 0, 100, 100, "Re", "Im");
-                let rot = time * 2.2; dA(0, 0, 80 * Math.cos(rot), 80 * Math.sin(rot), '#e74c3c', 'V');
-                dA(0, 0, 55 * Math.cos(rot + Math.PI/2), 55 * Math.sin(rot + Math.PI/2), '#3498db', 'I');
-            }
-            else if (animType === "ac_inductor") {
-                dFormula("X_L = \\omega L", -50, -140); drawAxis(0, 0, 100, 100, "Re", "Im");
-                let rot = time * 2.2; dA(0, 0, 80 * Math.cos(rot), 80 * Math.sin(rot), '#e74c3c', 'V');
-                dA(0, 0, 55 * Math.cos(rot - Math.PI/2), 55 * Math.sin(rot - Math.PI/2), '#3498db', 'I');
-            }
-            else if (animType === "rle_resonance") {
-                dFormula("f₀ = 1 / 2\\pi\\sqrt{LC}", -95, -130); drawAxis(-100, 60, 200, 100, "f", "I");
-                ctx.beginPath(); ctx.strokeStyle='#9b59b6'; ctx.lineWidth=2.5;
-                for(let x=-80; x<=80; x++) { let denom = 1 + 0.004*x*x; ctx.lineTo(x, 60 - 80/denom); } ctx.stroke();
-                let fx = Math.sin(time)*40; dC(fx, 60 - 80/(1+0.004*fx*fx), 6, '#e74c3c');
-            }
+function drawAxis(ox, oy, w, h, xL, yL) {
+    dA(ox, oy+h, ox, oy-h, '#7f8c8d', yL); dA(ox-w, oy, ox+w, oy, '#7f8c8d', xL);
+    dMath("O", ox-15, oy+15, '#7f8c8d');
+}
 
-            // ----------------------------------------------------
-            // 第7章 原子 (74〜79)
-            // ----------------------------------------------------
-            else if (animType === "photoelectric_einstein") {
-                dFormula("K_{max} = h\\nu - W", -75, -140); dLine(-130, 40, 130, 40, '#7f8c8d', 10);
-                let tc = time % 2.2;
-                if(tc < 0.9) { dA(-140 + tc*130, -90 + tc*120, -120 + tc*130, -72 + tc*120, '#f1c40f', 'hν'); }
-                else { let ta = tc - 0.9; let minus_x = -10 + ta*150, minus_y = 32 - ta*80; dC(minus_x, minus_y, 6, '#3498db'); dA(minus_x, minus_y, minus_x+30, minus_y-16, '#2980b9', 'e⁻'); }
-            }
-            else if (animType === "x_ray_compton") {
-                dFormula("\\Delta\\lambda = \\lambda' - \\lambda", -65, -140); dC(0, 0, 8, '#2c3e50'); dMath("e⁻", -12, 20);
-                let tc = time % 2.5;
-                if(tc < 1.0) { dA(-150 + tc*140, 0, -130 + tc*140, 0, '#f1c40f', 'λ'); }
-                else {
-                    let ta = tc - 1.0, th = Math.PI/5;
-                    dA(0, 0, ta*130*Math.cos(th), -ta*130*Math.sin(th), '#e67e22', "λ'");
-                    dA(0, 0, ta*70*Math.cos(th-Math.PI), ta*70*Math.sin(th-Math.PI), '#3498db', '電子');
-                }
-            }
-            else if (animType === "bohr_atom_model") {
-                dFormula("m v r = n \\cdot h / 2\\pi", -100, -150); dC(0, 0, 20, '#e74c3c');
-                let r = 85, rot = time * 2; dC(0, 0, r, '#cbd5e0', false);
-                let ex = r * Math.cos(rot), ey = r * Math.sin(rot);
-                dC(ex, ey, 8, '#3498db'); dA(ex, ey, ex - 45*Math.sin(rot), ey + 45*Math.cos(rot), '#2980b9', 'v');
-                dLine(0, 0, ex, ey, '#7f8c8d', 1, [3,3]);
-            }
-            else if (animType === "de_broglie_wave") {
-                dFormula("\\lambda = h / p", -45, -140);
-                let v = 35 + Math.abs(Math.sin(time))*60, wave_len = 180 / v, cx = -160 + (time*65)%320;
-                dC(cx, 0, 8, '#3498db'); dA(cx, 0, cx+40, 0, '#2980b9', 'v');
-                ctx.beginPath(); ctx.strokeStyle='rgba(155,89,182,0.6)';
-                for(let i=-40; i<=40; i+=2) ctx.lineTo(cx+i, Math.sin(i / wave_len)*15); ctx.stroke();
-            }
-            else if (animType === "radioactive_decay_half") {
-                dFormula("N = N₀ (1/2)^{t/T}", -85, -130);
-                let tc = (time % 5), N0 = 60, N_curr = N0 * Math.pow(0.5, tc / 1.5);
-                dTxt("Time (t)", -150, -50); dTxt("Nuclei N: " + N_curr.toFixed(0), -150, -25, '#c0392b');
-                for(let i=0; i<N0; i++) {
-                    let rx = -120 + Math.abs(Math.sin(i*77))*240, ry = 10 + Math.abs(Math.cos(i*33))*70;
-                    dC(rx, ry, 4, i < N_curr ? '#2ecc71' : 'rgba(127,140,141,0.15)');
-                }
-            }
-            else if (animType === "mass_defect_einstein") {
-                dFormula("E = \\Delta m \\cdot c²", -75, -130); let tc = time % 3;
-                if(tc < 1.3) { dC(-30, 0, 22, '#e74c3c'); dC(20, 5, 18, '#3498db'); dMath("Δm", -5, 45); }
-                else { for(let i=0; i<8; i++) dA(0, 0, Math.sin(i)*80, Math.cos(i)*80, '#f1c40f'); }
-            }
+// ====================================================
+// メインループ
+// ====================================================
+function render() {
+    requestAnimationFrame(render);
+    try {
+        let speed = (speedSlider) ? parseFloat(speedSlider.value) : 1.0;
+        if(isPlaying) time += 0.04 * speed;
+        const w = canvas.width, h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.save();
+        ctx.translate(w/2 + panX, h/2 + panY); 
+        ctx.scale(scale, scale);
 
-            ctx.restore();
-        } catch (e) {
-            console.error("Render Error:", e);
-            ctx.restore();
+        // 背景グリッド
+        ctx.strokeStyle = '#eef2f5'; ctx.lineWidth = 1;
+        for(let i=-1000; i<=1000; i+=20) { 
+            if(i%100===0) ctx.strokeStyle='#dfe6e9'; else ctx.strokeStyle='#eef2f5'; 
+            dLine(i,-1000,i,1000,ctx.strokeStyle); dLine(-1000,i,1000,i,ctx.strokeStyle); 
         }
-    }
+        dLine(-1000, 0, 1000, 0, '#b2bec3', 2); dLine(0, -1000, 0, 1000, '#b2bec3', 2); 
 
-    render();
+        let t = time % 6; 
+        if(!animType) { dTxt("シミュレーションを選択してください。", -120, 0, "#7f8c8d"); ctx.restore(); return; }
+
+        // ----------------------------------------------------
+        // 1. 力学: 直線運動・加速度
+        // ----------------------------------------------------
+        if (animType === "work_cos") {
+            dFormula("W = F x cosθ", -60, -120);
+            ctx.fillStyle='#bdc3c7'; ctx.fillRect(-200, 40, 400, 5);
+            let x = -100 + t*30; if(x > 150) time=0;
+            dB(x, 20, 50, 40, '#3498db'); dMath("m", x-10, 25, "white");
+            let F = 100, ang = -Math.PI/6; let Fx = F*Math.cos(ang), Fy = F*Math.sin(ang);
+            dA(x, 0, x+Fx, Fy, '#7f8c8d', 'F'); dAng(x, 0, 40, ang, 0, "θ", "#e67e22");
+            dA(x, 0, x+Fx, 0, '#e74c3c', 'F cosθ'); dLine(x+Fx, 0, x+Fx, Fy, '#bdc3c7', 2, [5,5]); 
+            dA(-100, 60, x, 60, '#2ecc71', 'x');
+        }
+        else if (animType.includes("linear") || animType.includes("accel") || animType.includes("equation") || animType.includes("relative") || animType.includes("v_t")) {
+            dFormula("v = v₀ + at,  x = v₀t + 1/2 at²", -120, -150);
+            ctx.fillStyle='#bdc3c7'; ctx.fillRect(-300, 40, 600, 5); 
+            let a = animType.includes("linear") || animType.includes("relative") ? 0 : 20;
+            let v0 = 40; let x = -200 + v0*t + 0.5*a*t*t; let v = v0 + a*t;
+            if(x > 250) time = 0;
+            
+            dB(x, 20, 50, 40, '#3498db'); dMath("m", x-8, 25, "white");
+            if(!animType.includes("equation")) dA(x, -10, x + v, -10, '#2980b9', 'v');
+            if(a > 0) dA(x, -35, x + a*3, -35, '#27ae60', 'a');
+            
+            if(animType.includes("relative")) {
+                let x2 = -200 + 80*t; 
+                dB(x2, -40, 50, 40, '#e74c3c'); dA(x2, -70, x2+80, -70, '#c0392b', 'v_A'); dMath("A", x2-10, -35, "white");
+                dMath("B", x-10, 25, "white"); dTxt("v_AB = v_B - v_A", -60, -100);
+            } else {
+                drawAxis(-180, -100, 100, 80, "t", a>0?"v":"x");
+                ctx.beginPath(); ctx.strokeStyle=a>0?'#2980b9':'#3498db'; ctx.lineWidth=2;
+                for(let i=0; i<t; i+=0.1) ctx.lineTo(-180 + i*15, -100 - (a>0?(v0+a*i)*0.4 : v0*i*0.2));
+                ctx.stroke();
+            }
+        }
+        // ----------------------------------------------------
+        // 2. 力学: 落体の運動 (投げ下ろし・投げ上げ)
+        // ----------------------------------------------------
+        else if (animType.includes("fall") || animType.includes("throw")) {
+            dFormula("y = v₀t + 1/2 gt²,  v = v₀ + gt", -120, -160);
+            let startY = animType.includes("throw") && !animType.includes("down") ? 100 : -100;
+            let startX = animType.includes("angle") ? -150 : 0;
+            let v0y = 0, v0x = 0, g = 50;
+            if(animType.includes("fall_v0")) v0y = 50; 
+            if(animType.includes("throw") && !animType.includes("down")) v0y = -130; 
+            if(animType.includes("angle")) { v0x = 60; v0y = -130; startY = 100; }
+            
+            let cy = startY + v0y*t + 0.5*g*t*t; let cx = startX + v0x*t; let cvy = v0y + g*t;
+            if(cy > 180 && t>0.5) time=0;
+
+            dLine(-200, startY, 200, startY, '#7f8c8d', 1, [5,5]); dMath("y=0", -80, startY-10, '#7f8c8d');
+            drawAxis(animType.includes("angle")?-150:-50, startY, animType.includes("angle")?200:30, 150, animType.includes("angle")?"x":"", "y");
+
+            ctx.fillStyle='rgba(231,76,60,0.3)'; for(let i=0; i<t; i+=0.1) dC(startX+v0x*i, startY+v0y*i+0.5*g*i*i, 4);
+            dC(cx, cy, 15, '#e74c3c'); dMath("m", cx-8, cy+6, "white");
+            dA(cx+25, cy, cx+25, cy+cvy*0.4, '#2980b9', 'v'); dA(cx-25, cy, cx-25, cy+g*0.6, '#27ae60', 'g');
+            if(v0y !== 0 && t < 0.8) dA(startX, startY, startX+v0x*0.4, startY+v0y*0.4, '#8e44ad', 'v₀');
+        }
+        // ----------------------------------------------------
+        // 3. 力学: 力・摩擦・ばね
+        // ----------------------------------------------------
+        else if (animType.includes("force") || animType.includes("normal") || animType.includes("tension") || animType.includes("spring") || animType.includes("friction") || animType.includes("law")) {
+            ctx.fillStyle='#7f8c8d'; ctx.fillRect(-150, 40, 300, 5);
+            if(animType.includes("spring")) {
+                dFormula("F = -kx", -40, -120);
+                let sx = Math.sin(time*3)*60;
+                ctx.fillRect(-120, -40, 10, 80); 
+                ctx.beginPath(); ctx.moveTo(-110,10); let c = 10; let dx=(sx-30+110)/c; 
+                for(let i=0;i<c;i++){ctx.lineTo(-110+dx*(i+0.5), 10+(i%2===0?-10:10));} 
+                ctx.lineTo(sx-30,10); ctx.strokeStyle='#7f8c8d'; ctx.stroke();
+                dB(sx, 10, 60, 60, '#9b59b6'); dMath("m", sx-10, 15, "white");
+                dA(sx, 10, sx-sx, 10, '#e74c3c', 'F'); drawAxis(0, 60, 100, 10, "x", ""); 
+            } else {
+                if(animType.includes("friction")) dFormula("f = μN", -40, -120);
+                else dFormula("W = mg", -40, -120);
+                dB(0, 10, 60, 60, '#9b59b6'); dMath("m", -8, 15, "white");
+                dA(0, 10, 0, 80, '#e74c3c', 'mg'); 
+                if(animType.includes("tension")) { dA(0, -20, 0, -80, '#7f8c8d', '糸'); dA(0, 10, 0, -60, '#2ecc71', 'T'); }
+                else dA(0, 10, 0, -60, '#2ecc71', 'N');
+                
+                if(animType.includes("friction")) {
+                    let p = animType.includes("friction_s") ? (t*20) : 80; if(p>80) time=0;
+                    dA(0, 10, p, 10, '#3498db', 'F'); dA(0, 40, -p, 40, '#e67e22', animType.includes("friction_s")?'f = μN':'f\' = μ\'N');
+                    if(animType.includes("friction_d")) dA(0,-30,40,-30,'#2980b9','v');
+                }
+            }
+        }
+        // ----------------------------------------------------
+        // 4. 力学: 圧力と浮力
+        // ----------------------------------------------------
+        else if (animType.includes("pressure") || animType.includes("buoyancy") || animType.includes("pascal")) {
+            if(animType.includes("buoyancy")) {
+                dFormula("F = ρVg (浮力)", -60, -120);
+                ctx.fillStyle='rgba(52, 152, 219, 0.4)'; ctx.fillRect(-150, -20, 300, 120);
+                let bob = Math.sin(time*3)*15; 
+                dB(0, 10+bob, 60, 60, '#e67e22'); dMath("V", -8, 15+bob, "white");
+                dA(0, 10+bob, 0, 80+bob, '#e74c3c', 'mg'); dA(0, 10+bob, 0, -60+bob, '#2ecc71', 'ρVg');
+                dLine(-150, -20, 150, -20, '#2980b9', 2);
+            } else {
+                dFormula("p = F / S", -50, -120);
+                ctx.fillStyle='#7f8c8d'; ctx.fillRect(-150, 40, 300, 5);
+                dB(0, 10, 80, 60, '#9b59b6');
+                dLine(-40, -20, 40, -20, '#2ecc71', 6); dMath("S", 50, -15, '#2ecc71'); 
+                for(let i=-20; i<=20; i+=20) dA(i, -70, i, -20, '#e74c3c'); 
+                dMath("F", -10, -80, '#e74c3c');
+            }
+        }
+        // ----------------------------------------------------
+        // 5. 力学: モーメント・重心
+        // ----------------------------------------------------
+        else if (animType.includes("moment") || animType.includes("balance") || animType.includes("center")) {
+            if(animType.includes("center")) {
+                dFormula("x_G = (m₁x₁ + m₂x₂) / (m₁ + m₂)", -120, -120);
+                drawAxis(0, 50, 150, 20, "x", "");
+                dC(-80, 0, 20, '#3498db'); dMath("m₁", -90, -30); dA(-80, 50, -80, 15, '#3498db', 'x₁', true);
+                dC(60, 0, 30, '#e74c3c'); dMath("m₂", 50, -40); dA(60, 50, 60, 30, '#e74c3c', 'x₂', true);
+                dLine(-80, 0, 60, 0, '#bdc3c7', 4);
+                let xg = (-80*20 + 60*30) / (20+30); 
+                dA(xg, 50, xg, 0, '#2ecc71', 'x_G', true); dC(xg, 0, 6, '#2ecc71');
+            } else {
+                dFormula("M = F l (力のモーメント)", -100, -120);
+                let a = animType.includes("moment") ? Math.sin(time)*0.2 : 0;
+                ctx.beginPath(); ctx.moveTo(0,40); ctx.lineTo(-20,80); ctx.lineTo(20,80); ctx.fillStyle='#7f8c8d'; ctx.fill();
+                ctx.translate(0,30); ctx.rotate(a);
+                ctx.fillStyle='#f39c12'; ctx.fillRect(-120,-5,240,10);
+                dB(-80,-20,30,30,'#3498db'); dA(-80,-20,-80,50,'#e74c3c','F₁'); dMath("l₁", -40, -15);
+                dB(80,-25,40,40,'#e74c3c'); dA(80,-25,80,70,'#e74c3c','F₂'); dMath("l₂", 40, -15);
+            }
+        }
+        // ----------------------------------------------------
+        // 6. 力学: 運動量・衝突・反発係数
+        // ----------------------------------------------------
+        else if (animType.includes("momentum") || animType.includes("impulse") || animType.includes("collision") || animType.includes("bounce") || animType.includes("restitution")) {
+            let t2 = time%3;
+            if(animType.includes("impulse")) {
+                dFormula("I = FΔt = mΔv", -60, -120);
+                let x = -150 + t*50; if(x > 150) time=0;
+                dC(x, 0, 20, '#3498db'); dMath("m", x-8, 6, "white"); dA(x, -30, x+40, -30, '#2980b9', 'v');
+                dA(x-60, 0, x-20, 0, '#e74c3c', 'FΔt');
+            } else if (animType.includes("restitution") || animType.includes("bounce")) {
+                dFormula("e = |v₁' - v₂'| / |v₁ - v₂|", -100, -120);
+                let by = 80 - Math.abs(Math.cos(time*3)*80)*Math.exp(-time*0.2);
+                dC(0, by, 15, '#1abc9c'); dA(20, by, 20, by+Math.sin(time*3)*40*Math.exp(-time*0.2), '#2980b9', 'v');
+                ctx.fillStyle='#bdc3c7'; ctx.fillRect(-50, 95, 100, 5);
+            } else {
+                dFormula("m₁v₁ + m₂v₂ = m₁v₁' + m₂v₂'", -120, -120);
+                let x1 = t2<1.5 ? -120+t2*70 : -15 - (t2-1.5)*60; 
+                let x2 = t2<1.5 ? -15 : -15+(t2-1.5)*120; 
+                dC(x1, 0, 20, '#3498db'); dMath("m₁", x1-10, 6, "white"); 
+                dA(x1, -30, x1+(t2<1.5?50:-30), -30, '#2980b9', t2<1.5?'v₁':'v₁\'');
+                dC(x2, 0, 20, '#e74c3c'); dMath("m₂", x2-10, 6, "white"); 
+                dA(x2, -30, x2+(t2>=1.5?80:0), -30, '#e74c3c', t2<1.5?'v₂=0':'v₂\'');
+            }
+        }
+        // ----------------------------------------------------
+        // 7. 力学: エネルギー保存則
+        // ----------------------------------------------------
+        else if (animType.includes("energy") || animType.includes("power") || (animType.includes("pendulum") && !animType.includes("t"))) {
+            dFormula("E = K + U = 1/2 mv² + mgh = 一定", -140, -160);
+            let a = Math.sin(time*2)*0.8;
+            ctx.fillStyle='#bdc3c7'; ctx.fillRect(-200,-100,100,10); 
+            let px = -150 + 150*Math.sin(a), py = -100 + 150*Math.cos(a);
+            dLine(-150,-100, px, py, '#333', 2); 
+            dC(px, py, 20, '#9b59b6'); dMath("m", px-8, py+6, "white");
+            dA(px, py, px+40*Math.cos(a)*Math.cos(time*2), py+40*Math.sin(a)*Math.cos(time*2), '#2980b9', 'v');
+            dLine(-250, 50, -50, 50, '#7f8c8d', 1, [5,5]); dMath("h=0", -250, 40, '#7f8c8d');
+            dA(-150, 50, -150, py, '#2ecc71', 'h', true);
+
+            let K = (0.8 - Math.abs(a))*100, U = Math.abs(a)*100;
+            drawAxis(100, 100, 120, 120, "", "Energy");
+            ctx.fillStyle='#2ecc71'; ctx.fillRect(120, 100-K, 30, K); dMath("K", 125, 130, '#2ecc71');
+            ctx.fillStyle='#e67e22'; ctx.fillRect(160, 100-U, 30, U); dMath("U", 165, 130, '#e67e22');
+            ctx.fillStyle='#8e44ad'; ctx.fillRect(200, 0, 30, 100);   dMath("E", 205, 130, '#8e44ad'); 
+        }
+        // ----------------------------------------------------
+        // 8. 力学: 円運動
+        // ----------------------------------------------------
+        else if (animType.includes("circular") || animType.includes("centripetal") || animType.includes("centrifugal")) {
+            dFormula("v = rω,  a = rω²,  F = mrω²", -120, -150);
+            let r = 80; dC(0,0,r,'#bdc3c7',false); dC(0,0,5,'#f1c40f');
+            let a = time*2; let bx = r*Math.cos(a), by = r*Math.sin(a);
+            dC(bx, by, 15, '#3498db'); dMath("m", bx-8, by+6, "white");
+            dLine(0,0,bx,by,'#7f8c8d'); dMath("r", bx/2, by/2-10); dAng(0,0,30,0,a,"ωt","#e67e22");
+            dA(bx, by, bx-50*Math.sin(a), by+50*Math.cos(a), '#2980b9', 'v');
+            if(animType.includes("centrifugal")) dA(bx, by, bx+50*Math.cos(a), by+50*Math.sin(a), '#e67e22', 'mrω²');
+            else dA(bx, by, bx*0.4, by*0.4, '#e74c3c', 'F');
+        }
+        // ----------------------------------------------------
+        // 9. 力学: 万有引力・ケプラーの法則
+        // ----------------------------------------------------
+        else if (animType.includes("gravity") || animType.includes("kepler") || animType.includes("universal")) {
+            dFormula("F = G (m₁m₂) / r²", -70, -150);
+            let a = time;
+            dC(0,0,30,"#e67e22"); dMath("M", -10, 10, "white");
+            let px = 120*Math.cos(a), py = 120*Math.sin(a);
+            dC(px, py, 15, "#3498db"); dMath("m", px-8, py+5, "white");
+            dA(px, py, 0, 0, "#e74c3c", "F"); dA(0, 0, px, py, "#e74c3c", "F");
+            dLine(0,0, px, py, "#7f8c8d", 1, [5,5]); dMath("r", px/2, py/2-10);
+            ctx.beginPath(); ctx.strokeStyle='rgba(189, 195, 199, 0.5)'; ctx.arc(0,0,120,0,Math.PI*2); ctx.stroke();
+        }
+        // ----------------------------------------------------
+        // 10. 力学: 単振動
+        // ----------------------------------------------------
+        else if (animType.includes("shm") || animType.includes("harmonic") || animType.includes("oscillation") || animType === "pendulum_t") {
+            dFormula("x = A sin(ωt),  F = -Kx", -100, -150);
+            let R = 80, o = 1.5, a = time*o; let px = R*Math.cos(a), py = R*Math.sin(a);
+            dC(-150, 0, R, '#bdc3c7', false); dLine(-150,0,-150+px,py,'#7f8c8d'); dMath("A", -150+px/2, py/2-10);
+            dAng(-150, 0, 30, 0, a, "ωt", "#2980b9");
+            dA(-150+px, 0, -150+px, py, '#e74c3c', 'x', true); 
+            dLine(-150+px, py, 50, py, '#e74c3c', 2, [5,5]);
+            
+            drawAxis(50, 0, 150, 100, "t", "x");
+            dC(50, py, 15, '#2ecc71'); dMath("m", 40, py+5, "white");
+            ctx.beginPath(); ctx.strokeStyle='rgba(46, 204, 113, 0.6)'; ctx.lineWidth=2;
+            for(let i=0; i<150; i++) ctx.lineTo(50+i, R*Math.sin(a - i*0.05)); ctx.stroke();
+            if(animType.includes("v")) dA(70, py, 70, py+R*o*Math.cos(a)*0.5, '#2980b9', 'v');
+            if(animType.includes("a") || animType.includes("f")) dA(90, py, 90, py-py*0.5, '#e74c3c', 'F');
+        }
+        // ----------------------------------------------------
+        // 11. 熱力学: 熱量・比熱・状態変化
+        // ----------------------------------------------------
+        else if (animType.includes("temp") || animType.includes("heat") || animType.includes("latent") || animType.includes("state")) {
+            dFormula("Q = mcΔT", -50, -150);
+            ctx.fillStyle = 'rgba(236, 240, 241, 0.8)'; ctx.fillRect(-100,-80,200,160);
+            let spd = animType.includes("heat") ? 1+(time%4) : 2;
+            let c = animType.includes("state") ? ((time%4)<2?'#e74c3c':'#8e44ad') : `rgb(${spd*50},50,200)`;
+            for(let i=1; i<=40; i++) {
+                let px = Math.sin(i*123 + time*spd)*80, py = Math.cos(i*321 + time*spd)*60;
+                dC(px, py, 4, c);
+            }
+            ctx.fillStyle='white'; ctx.fillRect(-130,-50,10,100); ctx.strokeRect(-130,-50,10,100); 
+            ctx.fillStyle='#e74c3c'; ctx.fillRect(-128,50-spd*15,6,spd*15); dC(-125,50,12,'#e74c3c');
+            dMath("T", -150, 75, '#e74c3c'); 
+            if(animType.includes("heat")) dA(0, 120, 0, 90, '#e74c3c', 'Q');
+        }
+        // ----------------------------------------------------
+        // 12. 熱力学: 気体の法則・熱力学第一法則
+        // ----------------------------------------------------
+        else if (animType.includes("gas") || animType.includes("boyle") || animType.includes("charles") || animType.includes("kinetic") || animType.includes("internal") || animType.includes("thermo") || animType.includes("piston") || animType.includes("engine") || animType.includes("molar")) {
+            if(animType.includes("thermo") || animType.includes("internal")) dFormula("ΔU = Q + W", -60, -150);
+            else dFormula("pV = nRT", -50, -150);
+            let pw = 60+Math.sin(time*2)*40;
+            ctx.strokeRect(-100,-60,pw+100,120); dMath("V", -80, -70);
+            ctx.fillStyle='#e74c3c'; ctx.fillRect(pw,-60,15,120); 
+            if(Math.sin(time*2)>0) dA(pw+20,0,pw+60,0,'#e74c3c','W = pΔV');
+            if(animType.includes("thermo")) dA(0, 100, 0, 70, '#e74c3c', 'Q');
+            dMath("p", pw-20, -70, '#e74c3c');
+            for(let i=1; i<=40; i++) {
+                let px = -100 + Math.abs(Math.sin(i*11+time*(3+i%3)))*(pw+100);
+                let py = -60 + Math.abs(Math.cos(i*22+time*(2+i%2)))*120;
+                dC(px, py, 4, '#e67e22');
+            }
+        }
+        // ----------------------------------------------------
+        // 13. 波動: 波の基本・音波・ドップラー効果
+        // ----------------------------------------------------
+        else if (animType.includes("wave") || animType.includes("sound") || animType.includes("doppler") || animType.includes("interference") || animType.includes("beat") || animType.includes("pipe") || animType.includes("string") || animType.includes("transverse") || animType.includes("longitudinal")) {
+            if (animType.includes("doppler")) {
+                dFormula("f' = f (V - v_o) / (V - v_s)", -100, -150);
+                let sx = -100 + (t%3)*40;
+                dC(sx, 0, 10, "#e74c3c"); dA(sx, 0, sx+40, 0, "#c0392b", "v_s");
+                for(let i=0; i<4; i++) { ctx.beginPath(); ctx.strokeStyle="rgba(52, 152, 219, 0.5)"; ctx.arc(sx - i*25, 0, 30 + i*25, 0, Math.PI*2); ctx.stroke(); }
+                dC(100, 0, 15, "#2ecc71"); dMath("Obs", 90, 25);
+            } else if (animType.includes("longitudinal") || animType.includes("sound")) {
+                dFormula("v = fλ", -40, -150);
+                for(let x=-200; x<=200; x+=20) {
+                    for(let y=-40; y<=40; y+=20) {
+                        let dx = Math.sin(x*0.05 - time*3)*15; dC(x+dx, y, 4, '#3498db');
+                    }
+                }
+                dTxt("疎密波（縦波）", -60, -80);
+            } else {
+                dFormula("v = fλ,  T = 1/f", -60, -150);
+                drawAxis(0, 0, 250, 80, "x", "y");
+                ctx.beginPath(); ctx.strokeStyle='#9b59b6'; ctx.lineWidth=3;
+                for(let x=-250; x<=250; x+=5) ctx.lineTo(x, Math.sin(x*0.04 - time*3)*60); ctx.stroke();
+                dC(0, Math.sin(-time*3)*60, 10, '#e74c3c');
+                dA(20, Math.sin(-time*3)*60, 20, Math.sin(-time*3)*60 + Math.cos(-time*3)*30, '#e74c3c', 'v');
+                let peak1 = (Math.PI/2 + time*3)/0.04; let peak2 = (5*Math.PI/2 + time*3)/0.04;
+                dA(peak1, -70, peak2, -70, '#2980b9', 'λ'); dLine(peak1, -60, peak1, -80, '#2980b9'); dLine(peak2, -60, peak2, -80, '#2980b9');
+            }
+        }
+        // ----------------------------------------------------
+        // 14. 光学: 屈折・反射・レンズ・回折
+        // ----------------------------------------------------
+        else if (animType.includes("refract") || animType.includes("reflect") || animType.includes("lens") || animType.includes("slit") || animType.includes("diffraction") || animType.includes("light")) {
+            if(animType.includes("lens")) {
+                dFormula("1/a + 1/b = 1/f", -60, -150);
+                dLine(-200, 0, 200, 0, "#7f8c8d"); 
+                dA(0, -80, 0, 80, "#3498db"); dA(0, 80, 0, -80, "#3498db"); 
+                let ox = -100, oy = -40;
+                dA(ox, 0, ox, oy, "#e74c3c", "A"); 
+                dLine(ox, oy, 0, oy, "#f1c40f"); dLine(0, oy, 100, 0, "#f1c40f"); 
+                dLine(ox, oy, 0, 0, "#f1c40f"); dLine(0, 0, 100, 40, "#f1c40f"); 
+                dA(100, 0, 100, 40, "#e67e22", "A'"); 
+                dMath("f", 50, 15); dC(50, 0, 4, "#2c3e50");
+            } else {
+                dFormula("n₁₂ = sin(i) / sin(r) = v₁ / v₂", -100, -170);
+                ctx.fillStyle='rgba(52,152,219,0.2)'; ctx.fillRect(-250, 0, 500, 200);
+                dLine(-250, 0, 250, 0, '#34495e', 3); dMath("n₁", -240, -20); dMath("n₂", -240, 30);
+                dA(0, -150, 0, 150, '#bdc3c7', '', true); 
+                
+                let isTotal = animType.includes("total") || animType.includes("all");
+                let isReflect = isTotal || animType.includes("reflect");
+                let aI = isTotal? Math.PI/2.5 : Math.PI/4; let aR = isTotal? Math.PI/1.5 : Math.PI/8;
+                let ix = -120*Math.sin(aI), iy = -120*Math.cos(aI); let rx = 120*Math.sin(aR), ry = 120*Math.cos(aR);
+                dA(ix, iy, 0, 0, '#f1c40f', '入射光');
+                
+                if(isTotal) { dA(0, 0, -ix, iy, '#f1c40f', '全反射'); } 
+                else if (isReflect) { dA(0, 0, -ix, iy, '#f1c40f', '反射光'); dA(0, 0, rx, ry, 'rgba(241, 196, 15, 0.4)', '屈折光'); }
+                else { dA(0, 0, rx, ry, '#f1c40f', '屈折光'); }
+                
+                dAng(0, 0, 40, -Math.PI/2, -Math.PI/2 + aI, "i", "#e74c3c"); 
+                if(!isTotal) { dAng(0, 0, 60, Math.PI/2 - aR, Math.PI/2, "r", "#2980b9"); dA(ix, iy, 0, iy, '#e74c3c', 'sin i', true); dA(rx, ry, 0, ry, '#2980b9', 'sin r', true); }
+            }
+        }
+        // ----------------------------------------------------
+        // 15. 電磁気: クーロン・電場・コンデンサー・回路
+        // ----------------------------------------------------
+        else if (animType.includes("coulomb") || animType.includes("field") || animType.includes("voltage") || animType.includes("capacitor") || animType.includes("circuit") || animType.includes("ohm") || animType.includes("kirchhoff") || animType.includes("joule") || animType.includes("electric")) {
+            if(animType.includes("coulomb") || animType.includes("field")) {
+                dFormula("F = k q₁q₂ / r²,  E = F/q", -100, -130);
+                dC(-80, 0, 20, "#e74c3c"); dMath("+q₁", -95, -30);
+                dC(80, 0, 20, "#3498db"); dMath("-q₂", 65, -30);
+                dA(-80, 0, -20, 0, "#e74c3c", "F"); dA(80, 0, 20, 0, "#3498db", "F");
+                dLine(-80, 0, 80, 0, "#bdc3c7", 1, [5,5]); dMath("r", 0, -10);
+            } else if(animType.includes("capacitor")) {
+                dFormula("C = ε S / d,  U = 1/2 CV²", -100, -130);
+                dLine(-60, -50, 60, -50, "#e74c3c", 8); dMath("+Q", -15, -65, "#e74c3c");
+                dLine(-60, 50, 60, 50, "#3498db", 8); dMath("-Q", -15, 85, "#3498db");
+                for(let x=-50; x<=50; x+=25) dA(x, -40, x, 40, "#2ecc71");
+                dMath("E", 75, 0, "#2ecc71");
+            } else {
+                dFormula("V = RI,  P = VI", -60, -130);
+                dLine(-60, -60, 60, -60, "#34495e"); dLine(60, -60, 60, 60, "#34495e");
+                dLine(-60, 60, -15, 60, "#34495e"); dLine(15, 60, 60, 60, "#34495e");
+                dLine(-60, -60, -60, 60, "#34495e");
+                dLine(-15, 45, -15, 75, "#e74c3c", 4); dLine(15, 50, 15, 70, "#34495e", 4); // 電源
+                dMath("V", -5, 95);
+                dB(0, -60, 50, 25, "#bdc3c7"); dMath("R", -5, -75);
+                dA(-60, 0, -60, -30, "#e67e22", "I"); // 電流
+            }
+        }
+        // ----------------------------------------------------
+        // 16. 電磁気: 磁場・ローレンツ力・電磁誘導・交流
+        // ----------------------------------------------------
+        else if (animType.includes("lorentz") || animType.includes("mag") || animType.includes("ampere") || animType.includes("faraday") || animType.includes("lenz") || animType.includes("induct") || animType.includes("ac_") || animType.includes("reactance") || animType.includes("impedance") || animType.includes("resonance")) {
+            if(animType.includes("lorentz")) {
+                dFormula("F = qvB sinθ", -60, -150);
+                for(let y=-80; y<=80; y+=40) { for(let x=-100; x<=100; x+=40) { dMath("×", x, y, "#2ecc71"); } } 
+                dMath("B(奥へ)", 120, -90, "#2ecc71");
+                let v = 80, a = -Math.PI/6; let vx = v*Math.cos(a), vy = v*Math.sin(a);
+                dC(0, 0, 10, '#f1c40f'); dMath("q", -12, 30);
+                dA(0, 0, vx, vy, '#3498db', 'v'); dAng(0, 0, 40, a, 0, "θ");
+                dA(0, 0, 0, vy, '#e74c3c', 'v sinθ', true); dA(0, 0, vx, 0, '#95a5a6', 'v cosθ', true); 
+                dLine(0,vy,vx,vy,'#bdc3c7',1,[5,5]); dLine(vx,vy,vx,0,'#bdc3c7',1,[5,5]);
+                dA(0, 0, -vy, 0, '#e67e22', 'F');
+            } else if (animType.includes("faraday") || animType.includes("lenz") || animType.includes("induct")) {
+                dFormula("V = -N (ΔΦ / Δt)", -80, -150);
+                let y = Math.sin(time*2)*40;
+                dB(0, -80 + y, 40, 70, "#e74c3c"); dMath("N", -5, -80+y, "white"); dMath("S", -5, -45+y, "white");
+                dA(0, -40+y, 0, y, "#3498db", "v");
+                for(let i=-1; i<=1; i++) { dC(i*40, 40, 25, "#bdc3c7", false); dC(i*40, 45, 25, "#bdc3c7", false); }
+            } else if (animType.includes("ac_gen") || animType.includes("ac_circuit")) {
+                dFormula("V = V₀ sin(ωt)", -60, -150);
+                let R = 60, o = 2, a = time * o;
+                drawAxis(-120, 0, 80, 80, "x", "y"); dC(-120, 0, R, '#bdc3c7', false);
+                let cx = -120 + R*Math.cos(a), cy = R*Math.sin(a);
+                dA(-120, 0, cx, cy, '#3498db', 'コイル'); dAng(-120, 0, 25, 0, a, "ωt");
+                dA(cx, 0, cx, cy, '#e74c3c', 'V₀ sinωt', true);
+                drawAxis(50, 0, 150, 80, "t", "V"); dC(50, cy, 6, '#e74c3c');
+                ctx.beginPath(); ctx.strokeStyle='#e74c3c'; ctx.lineWidth=3;
+                for(let i=0; i<150; i++) ctx.lineTo(50+i, R*Math.sin(a - i*0.05)); ctx.stroke();
+                dLine(cx, cy, 50, cy, '#e74c3c', 1, [5,5]); 
+            } else {
+                dFormula("V = Z I", -40, -150);
+                drawAxis(0, 0, 100, 100, "Re", "Im");
+                let w = time*2;
+                dA(0, 0, 80*Math.cos(w), 80*Math.sin(w), '#e74c3c', 'V');
+                let phase = animType.includes("reactance") ? Math.PI/2 : (animType.includes("resonance")? 0 : Math.PI/4);
+                dA(0, 0, 60*Math.cos(w - phase), 60*Math.sin(w - phase), '#3498db', 'I');
+                dTxt("フェーザ図 (位相のズレ)", -90, -120);
+            }
+        }
+        // ----------------------------------------------------
+        // 17. 原子: 光電効果・ボーアモデル・核反応
+        // ----------------------------------------------------
+        else if (animType.includes("photo") || animType.includes("compton") || animType.includes("bohr") || animType.includes("atom") || animType.includes("decay") || animType.includes("mass") || animType.includes("matter") || animType.includes("work_func") || animType.includes("modern")) {
+            if(animType.includes("photo") || animType.includes("work")) {
+                dFormula("K_max = hν - W", -70, -150);
+                dLine(-120, 50, 120, 50, "#7f8c8d", 20); dMath("Metal (仕事関数 W)", -70, 80);
+                dA(-80, -50, -20, 40, "#f1c40f", "hν (光子)");
+                if(t % 2 > 0.5) dA(0, 40, 80, -20, "#3498db", "e⁻ (K_max)");
+            } else if(animType.includes("bohr") || animType.includes("atom")) {
+                dFormula("mvr = n(h/2π),  hν = E_n - E_m", -120, -150);
+                dC(0, 0, 15, "#e74c3c"); dMath("+Ze", -15, 30, "#e74c3c");
+                dC(0, 0, 70, "#bdc3c7", false); dC(0, 0, 120, "#bdc3c7", false);
+                let a = time*3;
+                dC(70*Math.cos(a), 70*Math.sin(a), 8, "#3498db"); dMath("e⁻", 70*Math.cos(a)+15, 70*Math.sin(a)+15, "#3498db");
+            } else {
+                dFormula("E = Δm c² (質量欠損)", -80, -150);
+                dC(0, 0, 40, "#e74c3c"); dMath("Mass Δm", -35, 60);
+                dA(50, 0, 120, 0, "#f1c40f", "Energy E");
+            }
+        }
+        // フォールバック
+        else {
+            dFormula("Simulation Running...", -80, -120);
+            dTxt("設定されたアニメーション (" + animType + ") を実行中", -140, 0, "#7f8c8d");
+        }
+    } catch (e) {
+        console.error("Render Error:", e);
+        ctx.fillStyle = "red";
+        ctx.fillText("エラーが発生しました: " + e.message, -150, 0);
+    }
+    ctx.restore();
+}
+
+// ループの開始
+render();
     </script>
 </body>
 </html>
