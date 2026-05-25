@@ -769,4 +769,3 @@ function render() {
 }
 
 render();
-}
