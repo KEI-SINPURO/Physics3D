@@ -2,183 +2,147 @@
 // 高校物理 2Dシミュレーションエンジン (完全網羅・公式表示・美文字対応版)
 // ==========================================
 
-// ----------------------------------------------------
-// 【補完】高校物理 全分野網羅 公式データベース (physicsData)
-// ----------------------------------------------------
+// ------------------------------------------
+// 【欠落の修正】全17分野・全アニメーション型に対応するデータ定義
+// ------------------------------------------
 const physicsData = {
-    // === 1. 力学 ===
+    // 1. 力学: 直線運動・加速度・仕事
     "work_cos": {
-        chap: "1. 力学",
-        title: "仕事の定義と公式",
+        chap: "第1章 力学", title: "仕事とエネルギー",
+        formulas: [{ name: "仕事の定義", math: "W = F x \\cos\\theta", usage: "力が移動方向と斜めに向いているとき", reason: "移動方向の力成分 F \\cos\\theta のみが物体に仕事をします。", simText: "斜めに引っ張られる物体の仕事のシミュレーションです。", animType: "work_cos" }]
+    },
+    "linear_accel": {
+        chap: "第1章 力学", title: "等加速度直線運動",
         formulas: [
-            { name: "仕事の定義 (斜め方向の力)", math: "W = F x \\cos\\theta", usage: "力が物体の移動方向に対して傾いているとき", reason: "移動方向の力成分 F \\cos\\theta と移動距離 x の積になります。", simText: "物体を斜め上方に引きながら水平に移動させる時の仕事を表示します。", animType: "work_cos" }
+            { name: "速度・位置の公式", math: "v = v_0 + at, \\quad x = v_0t + \\frac{1}{2}at^2", usage: "加速度が一定の直線運動を解析するとき", reason: "速度は時間tに比例して増え、変位xはtの2乗のグラフ（放物線）になります。", simText: "等加速度で直線運動する物体の位置・速度・加速度の変化です。", animType: "accel" },
+            { name: "相対速度", math: "v_{AB} = v_B - v_A", usage: "動く観測者Aから別の動く物体Bを見たとき", reason: "相手の速度から自分の速度を引くことで、自分基準の速度を求めます。", simText: "赤い物体Aから見た、青い物体Bの相対的な運動です。", animType: "relative" }
         ]
     },
-    "linear_motion": {
-        chap: "1. 力学",
-        title: "等速直線運動・相対速度",
+    // 2. 力学: 落体の運動
+    "falling_motion": {
+        chap: "第1章 力学", title: "落体の運動",
         formulas: [
-            { name: "等速直線運動の変位", math: "x = vt", usage: "速度が一定の物体の移動距離を求めるとき", reason: "単位時間あたりの移動量（速度）に時間を掛けたものです。", simText: "速度が変化しない物体の直線運動です。", animType: "linear" },
-            { name: "相対速度", math: "v_{AB} = v_B - v_A", usage: "動く観測者(A)から見た別の物体(B)の速度を求めるとき", reason: "相手の速度から自分の速度を引くことで、自分を基準とした動きになります。", simText: "赤い物体Aから見た青い物体Bの運動ベクトルを表示します。", animType: "relative" }
+            { name: "自由落下・鉛直投げ下ろし", math: "y = v_0t + \\frac{1}{2}gt^2", usage: "物体を真下に落としたり、投げ下ろしたとき", reason: "重力加速度gによって、下向きに等加速度運動をします。", simText: "初速度を持って下向きに落下する物体の運動です。", animType: "fall_v0" },
+            { name: "鉛直投げ上げ", math: "v = v_0 - gt", usage: "物体を真上に投げ上げたとき", reason: "重力と逆向きに投げ上げるため、最高点に向かって減速します。", simText: "真上に投げ上げられ、最高点に達したあと落下する運動です。", animType: "throw" },
+            { name: "平射・斜方投射", math: "x = v_0 \\cos\\theta \\cdot t, \\quad y = v_0 \\sin\\theta \\cdot t - \\frac{1}{2}gt^2", usage: "斜め方向に物体を投げ出したとき", reason: "水平方向は等速直線運動、鉛直方向は投げ上げ運動の合成です。", simText: "斜め方向に投射された物体の放物運動です。", animType: "angle" }
         ]
     },
-    "accel_motion": {
-        chap: "1. 力学",
-        title: "等加速度直線運動",
+    // 3. 力学: 力・摩擦・ばね
+    "forces_spring": {
+        chap: "第1章 力学", title: "力のつりあいと運動の法則",
         formulas: [
-            { name: "速度の公式", math: "v = v_0 + at", usage: "一定の加速度で加速または減速する物体の速度を求めるとき", reason: "初速度に、加速した分の速度（加速度×時間）を加算します。", simText: "一定の加速度で加速する運動と、速度・時間の関係を示します。", animType: "accel" },
-            { name: "変位の公式", math: "x = v_0t + \\frac{1}{2}at^2", usage: "等加速度運動を行う物体の位置（移動距離）を求めるとき", reason: "初速度による進みと、加速による進みの合計です（v-tグラフの面積）。", simText: "加速する物体の位置変化と、v-tグラフの面積の連動です。", animType: "v_t" }
+            { name: "フックの法則", math: "F = kx", usage: "ばねの弾性力を求めるとき", reason: "ばねの伸びまたは縮みxに比例した復元力が働きます。", simText: "ばねに繋がれた物体の往復運動と弾性力Fのシミュレーションです。", animType: "spring" },
+            { name: "静止摩擦力と最大摩擦力", math: "f = \\mu N", usage: "物体が滑り出す直前の限界を調べるとき", reason: "垂直抗力Nに比例し、これを超えると物体は滑り出します。", simText: "力を加えていき、最大摩擦力を超えて滑り出す境界を視覚化します。", animType: "friction_s" },
+            { name: "動摩擦力", math: "f' = \\mu' N", usage: "物体がすでに滑っているときの摩擦力を求めるとき", reason: "滑っている間は、速度によらず一定の動摩擦力が運動を妨げます。", simText: "滑っている物体に働く一定の動摩擦力f'のシミュレーションです。", animType: "friction_d" }
         ]
     },
-    "fall_motion": {
-        chap: "1. 力学",
-        title: "落体の運動",
+    // 4. 力学: 圧力と浮力
+    "fluid_mechanics": {
+        chap: "第1章 力学", title: "流体の力学",
         formulas: [
-            { name: "自由落下・鉛直投げ下ろし", math: "y = v_0t + \\frac{1}{2}gt^2", usage: "重力によって下向きに落ちる物体の位置を求めるとき", reason: "重力加速度 g を加速度とした等加速度直線運動です。", simText: "初速度を持って下向きに落下する物体の運動です。", animType: "fall_v0" },
-            { name: "鉛直投げ上げ", math: "v = v_0 - gt", usage: "真上に投げ上げた物体の速度を求めるとき", reason: "上向きを正とすると、重力加速度は下向き（マイナス）に作用します。", simText: "最高点で速度が0になり、その後落下に転じる運動です。", animType: "throw" },
-            { name: "斜方投射 (放物運動)", math: "y = v_{0y}t - \\frac{1}{2}gt^2", usage: "斜めに投げ上げた物体の軌道や高さを求めるとき", reason: "水平方向は等速、鉛直方向は投げ上げ運動に分解して考えます。", simText: "放物線を描いて飛ぶ物体の速度成分の分解を表示します。", animType: "throw_angle" }
+            { name: "アルキメデスの原理（浮力）", math: "F = \\rho Vg", usage: "水などの流体中にある物体が受ける浮力を求めるとき", reason: "物体が押ししのけた流体の重さと同じだけの浮力を上向きに受けます。", simText: "流体中の物体に働く重力mgと浮力ρVgのつりあいです。", animType: "buoyancy" },
+            { name: "圧力の定義", math: "p = \\frac{F}{S}", usage: "面が受ける単位面積あたりの力を求めるとき", reason: "力が分散する面積Sが小さいほど、受ける圧力pは大きくなります。", simText: "ピストン面に働く力Fと圧力pの関係を示します。", animType: "pressure" }
         ]
     },
-    "force_and_spring": {
-        chap: "1. 力学",
-        title: "力・摩擦・ばねの弾性力",
+    // 5. 力学: モーメント・重心
+    "rigid_body": {
+        chap: "第1章 力学", title: "剛体のバランス",
         formulas: [
-            { name: "フックの法則 (ばねの力)", math: "F = -kx", usage: "ばねが物体を引っ張る、または押し返す力を求めるとき", reason: "変位 x に比例し、常に自然長に戻ろうとする逆向き（マイナス）の力です。", simText: "ばねに繋がれた物体の往復運動と、復元力の関係です。", animType: "spring" },
-            { name: "最大静止摩擦力", math: "f = \\mu N", usage: "静止している物体が動き出す瞬間の限界の力を求めるとき", reason: "面を押し付ける力（垂直抗力 N）に比例する最大の摩擦力です。", simText: "外力を大きくしていき、動き出す臨界点（最大静止摩擦）を表現します。", animType: "friction_s" },
-            { name: "動摩擦力", math: "f' = \\mu' N", usage: "滑っている物体に働く進行方向と逆向きの力を求めるとき", reason: "運動中、面から受ける抵抗力は速度によらず一定になります。", simText: "滑っている物体に働く一定の動摩擦力を表示します。", animType: "friction_d" }
+            { name: "力のモーメント", math: "M = Fl", usage: "物体を回転させる効果を考えるとき", reason: "支点からの腕の長さlと、垂直な力Fの積で回転の強さが決まります。", simText: "天秤の左右で働くモーメントのつりあいです。", animType: "moment" },
+            { name: "剛体の重心", math: "x_G = \\frac{m_1x_1 + m_2x_2}{m_1 + m_2}", usage: "大小の質点からなるシステムの重心位置を求めるとき", reason: "各質点の質量で位置を内分した点が、全体の質量中心（重心）になります。", simText: "2つの質点の質量比と重心x_Gの位置関係です。", animType: "center" }
         ]
     },
-    "pressure_buoyancy": {
-        chap: "1. 力学",
-        title: "圧力と浮力",
-        formulas: [
-            { name: "圧力の定義", math: "p = \\frac{F}{S}", usage: "面が受ける単位面積あたりの力を求めるとき", reason: "全受力を面積で割ることで、力の集中度合いを表します。", simText: "面に加わる力と面積による圧力の集中度を可視化します。", animType: "pressure" },
-            { name: "浮力 (アルキメデスの原理)", math: "F = \\rho V g", usage: "水などの流体中にある物体が受ける上向きの力を求めるとき", reason: "物体が押ししのけた流体の質量が受ける重力と同じ大きさの浮力を得ます。", simText: "水中の物体に働く重力と浮力の釣り合いです。", animType: "buoyancy" }
-        ]
-    },
-    "moment_rigid": {
-        chap: "1. 力学",
-        title: "モーメントと重心",
-        formulas: [
-            { name: "力のモーメント", math: "M = F l", usage: "剛体を回転させる効果の大きさを求めるとき", reason: "力の大きさと、回転中心から力の作用線までの距離の積です。", simText: "てこの原理と、左右のモーメントの釣り合いをシミュレートします。", animType: "moment" },
-            { name: "物体系の重心", math: "x_G = \\frac{m_1x_1 + m_2x_2}{m_1 + m_2}", usage: "質量の異なる複数の物体全体のバランスの取れる点を求めるとき", reason: "各物体の位置を質量で加重平均した位置が重心になります。", simText: "質量の異なる２つの球体の重心位置（G）をリアルタイムに計算します。", animType: "center" }
-        ]
-    },
+    // 6. 力学: 運動量と衝突
     "momentum_collision": {
-        chap: "1. 力学",
-        title: "運動量・衝突・力積",
+        chap: "第1章 力学", title: "運動量と衝動",
         formulas: [
-            { name: "運動量保存の法則", math: "m_1v_1 + m_2v_2 = m_1v_1' + m_2v_2'", usage: "２物体の衝突や分裂の前後の速度を求めるとき", reason: "内力（衝突の衝撃など）のみが働く場合、全体の運動量の総和は不変です。", simText: "２つの球が衝突し、速度が変化する前後の運動量保存を示します。", animType: "collision" },
-            { name: "力積と運動量変化", math: "I = F\\Delta t = m\\Delta v", usage: "物体に力を加えたときの速度変化を追うとき", reason: "加えた力と時間の積（力積）の分だけ、物体の運動量が変化します。", simText: "球体に強い力積が加わり、急加速する様子をシミュレートします。", animType: "impulse" },
-            { name: "反発係数 (はねかえり係数)", math: "e = \\frac{|v_1' - v_2'|}{|v_1 - v_2|}", usage: "衝突後の跳ね返りの強さを計算するとき", reason: "衝突前の相対速度に対する、衝突後の相対速度の比率（0〜1）です。", simText: "床に衝突して、反発係数に応じて徐々に跳ね返り高さを減じる球体です。", animType: "restitution" }
+            { name: "運動量保存の法則", math: "m_1v_1 + m_2v_2 = m_1v_1' + m_2v_2'", usage: "2物体が衝突・合体・分裂するとき", reason: "外力が働かない限り、衝突前後で運動量の総和は不変です。", simText: "2つの球が衝突し、速度が変化する前後のシミュレーションです。", animType: "collision" },
+            { name: "力積と運動量変化", math: "I = F\\Delta t = m\\Delta v", usage: "物体に一定時間力が働き、速度が変わるとき", reason: "加えた力積（力×時間）の分だけ、物体の運動量が変化します。", simText: "壁や外力から力積を受けて加速・減速する様子です。", animType: "impulse" },
+            { name: "反発係数（はねかえり係数）", math: "e = \\frac{|v_1' - v_2'|}{|v_1 - v_2|}", usage: "衝突後のはねかえり具合を計算するとき", reason: "衝突前後の相対速度の比を表し、1であれば弾性衝突（エネルギー保存）です。", simText: "床に衝突してはねかえるボールの運動（eによる減衰）です。", animType: "restitution" }
         ]
     },
-    "energy_conserv": {
-        chap: "1. 力学",
-        title: "機械的エネルギー保存則",
-        formulas: [
-            { name: "力学的エネルギー保存則", math: "E = K + U = \\text{一定}", usage: "摩擦のない斜面や振り子の運動を解析するとき", reason: "運動エネルギーKと位置エネルギーUの合計は常に一定に保たれます。", simText: "振り子の往復運動における、運動エネルギーと位置エネルギーのトレードオフです。", animType: "energy" }
-        ]
+    // 7. 力学: エネルギー保存
+    "energy_conservation": {
+        chap: "第1章 力学", title: "力学的エネルギー保存",
+        formulas: [{ name: "力学的エネルギー保存則", math: "E = K + U = \\frac{1}{2}mv^2 + mgh = 一定", usage: "摩擦や空気抵抗がなく、重力やばねの力だけで運動するとき", reason: "運動エネルギーKと位置エネルギーUは互いに変換され、総量は保たれます。", simText: "振り子の運動における運動エネルギーと位置エネルギーのリアルタイム推移です。", animType: "energy" }]
     },
+    // 8. 力学: 円運動
     "circular_motion": {
-        chap: "1. 力学",
-        title: "円運動と万有引力",
-        formulas: [
-            { name: "等速円運動の向心力", math: "F = mr\\omega^2", usage: "物体を円軌道に留めるために必要な中心向きの力を求めるとき", reason: "円の中心向きに常に速度を曲げ続けるための加速度が生じています。", simText: "円運動する物体の速度ベクトルと向心力ベクトルを表示します。", animType: "circular" },
-            { name: "万有引力の法則", math: "F = G\\frac{m_1m_2}{r^2}", usage: "天体同士や質量を持つ物体の間に働く引力を求めるとき", reason: "互いの質量の積に比例し、中心間距離の２乗に反比例します。", simText: "太陽の周りを公転する惑星に働く引力をシミュレートします。", animType: "gravity" }
-        ]
+        chap: "第1章 力学", title: "円運動",
+        formulas: [{ name: "向心力・遠心力", math: "F = mr\\omega^2 = m\\frac{v^2}{r}", usage: "物体が円軌道を回っているとき", reason: "円の中心に向かう加速度（向心加速度）が生じるため、向心力が必要です。", simText: "等速円運動する物体に働く速度vと向心力（または遠心力）のベクトルです。", animType: "centrifugal" }]
     },
-    "shm_oscillation": {
-        chap: "1. 力学",
-        title: "単振動",
-        formulas: [
-            { name: "単振動の変位", math: "x = A \\sin(\\omega t)", usage: "単振動を行う物体の任意の時間での位置を求めるとき", reason: "等速円運動を真横からスクリーンに投影した運動と同じ軌跡を描きます。", simText: "等速円運動の投影としての単振動と、時間経過の正弦波グラフの連動です。", animType: "shm" }
-        ]
+    // 9. 力学: 万有引力
+    "gravitation": {
+        chap: "第1章 力学", title: "万有引力と天体",
+        formulas: [{ name: "万有引力の法則", math: "F = G\\frac{m_1m_2}{r^2}", usage: "惑星の軌道運動や宇宙空間での引力を考えるとき", reason: "すべての質量を持つ物体は、距離の2乗に反比例する引力を及ぼし合います。", simText: "中心の重い星（M）の周りを公転する惑星（m）のシミュレーションです。", animType: "gravity" }]
     },
-
-    // === 2. 熱力学 ===
+    // 10. 力学: 単振動
+    "harmonic_oscillation": {
+        chap: "第1章 力学", title: "単振動",
+        formulas: [{ name: "単振動の変位と復元力", math: "x = A\\sin(\\omega t), \\quad F = -Kx", usage: "ばね振り子や単振り子の振動を解析するとき", reason: "中心からのズレxに比例した逆向きの力を受けるため、正弦波の振動になります。", simText: "円運動の投影としての単振動と、時間の経過に伴うx-tグラフの描画です。", animType: "shm" }]
+    },
+    // 11. 熱力学: 熱量と比熱
     "thermo_heat": {
-        chap: "2. 熱力学",
-        title: "熱量と比熱・状態変化",
-        formulas: [
-            { name: "熱量の公式", math: "Q = mc\\Delta T", usage: "物質の温度を変化させるのに必要な熱量を求めるとき", reason: "物質の質量、比熱（1gを1K上げる熱量）、温度変化に比例します。", simText: "熱を加えられることで分子運動（熱運動）が激しくなる気体容器です。", animType: "heat" }
-        ]
+        chap: "第2章 熱力学", title: "熱量と状態変化",
+        formulas: [{ name: "熱量の公式", math: "Q = mc\\Delta T", usage: "物質の温度を上げ下げするのに必要な熱量を求めるとき", reason: "質量m、比熱c、温度変化ΔTのすべてに比例して必要な熱量Qが決まります。", simText: "分子運動の激しさと温度計（T）、および外部からの熱量Qのイメージです。", animType: "heat" }]
     },
+    // 12. 熱力学: 気体の法則
     "thermo_gas": {
-        chap: "2. 熱力学",
-        title: "気体の法則と第一法則",
+        chap: "第2章 熱力学", title: "気体の状態変化",
         formulas: [
-            { name: "理想気体の状態方程式", math: "pV = nRT", usage: "気体の圧力、体積、温度、モル数の関係性を解くとき", reason: "ボイルの法則とシャルルの法則を分子運動論に基づいて一般化した式です。", simText: "ピストン内の気体分子の衝突によって生じる圧力と体積の関係です。", animType: "gas" },
-            { name: "熱力学第一法則", math: "\\Delta U = Q + W", usage: "気体の状態変化にともなうエネルギー変化を追うとき", reason: "内部エネルギーの増加は、吸収した熱量と外部からされた仕事の総和です。", simText: "加熱によって外部に膨張仕事（W）を行うピストンの動作です。", animType: "thermo" }
+            { name: "気体の状態方程式", math: "pV = nRT", usage: "気体の圧力、体積、温度の相互関係を調べるとき", reason: "分子の衝突回数（圧力p）と空間（体積V）は、分子数nと熱運動の激しさTに比例します。", simText: "ピストン内の気体分子の運動と、体積V・圧力pの変化です。", animType: "gas" },
+            { name: "熱力学第一法則", math: "\\Delta U = Q + W", usage: "気体が熱を受け取ったり、仕事をされたりするとき", reason: "外部から得た熱量Qとされた仕事Wの総和が、内部エネルギー（温度）の増加ΔUになります。", simText: "熱を加えられてピストンが膨張し、外部へ仕事をするシミュレーションです。", animType: "internal" }
         ]
     },
-
-    // === 3. 波動 ===
-    "wave_basic": {
-        chap: "3. 波動",
-        title: "波の基本式と音波",
+    // 13. 波動: 波の性質・ドップラー効果
+    "wave_motion": {
+        chap: "第3章 波動", title: "波の性質と音波",
         formulas: [
-            { name: "波の基本式", math: "v = f\\lambda", usage: "波の伝わる速さ、振動数、波長の関係を求めるとき", reason: "波１周期分（波長λ）の長さが１秒間に振動数fの回数だけ進みます。", simText: "正弦波が右向きに伝播していく横波の基本モデルです。", animType: "wave" },
-            { name: "縦波 (疎密波)", math: "v = f\\lambda", usage: "音波など、媒質の振動方向と進む向きが並行な波を解析するとき", reason: "媒質の密度の濃い部分（密）と薄い部分（疎）が交互に伝わります。", simText: "媒質粒子の水平振動によって発生する疎密波（縦波）の様子です。", animType: "longitudinal" }
+            { name: "波の基本式", math: "v = f\\lambda, \\quad T = \\frac{1}{f}", usage: "波の速度、周波数、波長の関係を求めるとき", reason: "1秒間にf個の波（長さλ）が進むため、速度はfλになります。", simText: "媒質が上下に振動し、波動が右へ伝播していく正弦波の様子です。", animType: "wave" },
+            { name: "縦波（疎密波）", math: "v = f\\lambda", usage: "音波などの疎密波を可視化・解析するとき", reason: "媒質が波の進行方向と同じ向きに振動し、密な部分と粗な部分が伝わります。", simText: "媒質の密度の濃淡が右に進んでいく縦波（音波）の挙動です。", animType: "longitudinal" },
+            { name: "ドップラー効果", math: "f' = f\\frac{V - v_o}{V - v_s}", usage: "音源や観測者が動いて音が変わって聞こえるとき", reason: "音源が動くと波長が縮み、観測者が動くと1秒間に受け取る波の数が変わります。", simText: "動く音源（赤）から放射される波面が前方に詰まり、後方に広がる様子です。", animType: "doppler" }
         ]
     },
-    "wave_doppler": {
-        chap: "3. 波動",
-        title: "ドップラー効果",
+    // 14. 光学: 反射・屈折・レンズ
+    "optics": {
+        chap: "第3章 波動", title: "光の反射・屈折とレンズ",
         formulas: [
-            { name: "ドップラー効果の公式", math: "f' = f \\frac{V - v_o}{V - v_s}", usage: "救急車が近づく・遠ざかる時の音の高さの変化を計算するとき", reason: "音源の運動で波長が縮み、観測者の運動で１秒間に受ける波の数が変わります。", simText: "前方に波面が詰まり、後方が広がる動く音源の波の伝播です。", animType: "doppler" }
+            { name: "屈折の法則（スネルの法則）", math: "n_{12} = \\frac{\\sin i}{\\sin r} = \\frac{v_1}{v_2}", usage: "光が異なる媒質へ斜めに入射して折れ曲がるとき", reason: "媒質間での光の進む速度の違い（v1, v2）によって、進行方向が変化します。", simText: "境界における入射角iと屈折角r、および全反射のシミュレーションです。", animType: "refract" },
+            { name: "レンズの公式", math: "\\frac{1}{a} + \\frac{1}{b} = \\frac{1}{f}", usage: "凸レンズや凹レンズによる像の位置を求めるとき", reason: "物体距離aと像距離b、焦点距離fは光線の幾何学的な経路からこの関係を満たします。", simText: "凸レンズを通過する光線が集まり、実像を結ぶ光路図です。", animType: "lens" }
         ]
     },
-    "wave_optics": {
-        chap: "3. 波動",
-        title: "光の屈折・反射とレンズ",
+    // 15. 電磁気: 電場とコンデンサー
+    "electrostatics": {
+        chap: "第4章 電磁気", title: "電場とコンデンサー",
         formulas: [
-            { name: "屈折の法則 (スネルの法則)", math: "\\frac{\\sin i}{\\sin r} = \\frac{n_2}{n_1}", usage: "光が空気から水などへ進むときの屈折角を求めるとき", reason: "異なる媒質間での光の進む速度の違いが、境界での折れ曲がりを生みます。", simText: "入射角と屈折角の関係、および臨界角を超えた際の全反射を表示します。", animType: "refract" },
-            { name: "レンズの公式", math: "\\frac{1}{a} + \\frac{1}{b} = \\frac{1}{f}", usage: "凸レンズや凹レンズによって像ができる位置を求めるとき", reason: "レンズの中心を通る光線と焦点をとおる光線の幾何学的な相似関係から導かれます。", simText: "光源から出た光線がレンズで屈折し、焦点の先に実像を結ぶ様子です。", animType: "lens" }
+            { name: "クーロンの法則", math: "F = k\\frac{q_1q_2}{r^2}", usage: "電荷同士に働く静電気力を求めるとき", reason: "質量に対する万有引力と同様に、電気量に比例し、距離の2乗に反比例します。", simText: "正電荷（赤）と負電荷（青）の間に働く引力Fのシミュレーションです。", animType: "coulomb" },
+            { name: "コンデンサーの電気容量", math: "C = \\varepsilon \\frac{S}{d}, \\quad U = \\frac{1}{2}CV^2", usage: "平行板コンデンサーの蓄電性能を調べるとき", reason: "極板面積Sが広く、間隔dが狭いほど電荷を多く（C）蓄えられます。", simText: "極板間に形成される一様な電場Eと、蓄えられる電荷±Qの様子です。", animType: "capacitor" },
+            { name: "オームの法則", math: "V = RI", usage: "直流回路の電圧・電流・抵抗を計算するとき", reason: "抵抗Rに電流Iを流すためには、電流に比例した電圧（電気的圧力）Vが必要です。", simText: "電源V、抵抗Rを流れる電流Iからなる基本回路です。", animType: "circuit" }
         ]
     },
-
-    // === 4. 電磁気 ===
-    "elec_field": {
-        chap: "4. 電磁気",
-        title: "電荷・電場・コンデンサー",
+    // 16. 電磁気: 磁場と電磁誘導
+    "electromagnetism": {
+        chap: "第4章 電磁気", title: "磁場と電磁誘導",
         formulas: [
-            { name: "クーロンの法則", math: "F = k\\frac{q_1q_2}{r^2}", usage: "帯電した２つの粒子の間に働く電気力を求めるとき", reason: "それぞれの電荷量の積に比例し、粒子間の距離の２乗に反比例します。", simText: "正電性と負電性の粒子間に発生する引力とベクトルの関係です。", animType: "coulomb" },
-            { name: "平行板コンデンサーの電気容量", math: "C = \\varepsilon \\frac{S}{d}", usage: "コンデンサーに蓄えられる電荷量を設計・計算するとき", reason: "極板の面積 S が大きいほど、また極板間隔 d が狭いほど多く電荷を蓄えられます。", simText: "極板に電荷が溜まり、内部に一様な電場が形成される様子です。", animType: "capacitor" }
+            { name: "ローレンツ力", math: "F = qvB \\sin\\theta", usage: "磁場中を動く電荷が受ける力を求めるとき", reason: "磁場Bに対して速度vで動く電荷qは、フレミングの左手の法則に従う力を受けます。", simText: "奥向きの磁場（×）の中を斜めに進む電荷が受けるローレンツ力Fです。", animType: "lorentz" },
+            { name: "ファラデーの電磁誘導の法則", math: "V = -N \\frac{\\Delta \\Phi}{\\Delta t}", usage: "コイルを貫く磁束が変化して誘導起電力が生じるとき", reason: "磁束の変化を妨げる向き（マイナス）に、変化の速さに比例した電圧が発生します。", simText: "磁石の移動によってコイル内の磁束が変化し、電流が誘起されるイメージです。", animType: "faraday" },
+            { name: "交流電圧の発生", math: "V = V_0 \\sin(\\omega t)", usage: "発電機などの交流電源を扱うとき", reason: "一様な磁場中でコイルが等速円運動すると、時間とともに正弦波の電圧が生まれます。", simText: "回転するコイル（位相ωt）と、発生する交流電圧の波形グラフの同期です。", animType: "ac_gen" }
         ]
     },
-    "elec_circuit": {
-        chap: "4. 電磁気",
-        title: "電流と直流回路",
+    // 17. 原子: 光電効果・原子模型
+    "atomic_physics": {
+        chap: "第5章 原子物理", title: "量子と原子の構造",
         formulas: [
-            { name: "オームの法則", math: "V = RI", usage: "回路中の抵抗に加わる電圧、または流れる電流を求めるとき", reason: "電流の流れにくさ（抵抗 R）に比例して、電位の降下（電圧 V）が生まれます。", simText: "電源と抵抗からなる直流閉回路を電子（電流）が流れるシミュレーションです。", animType: "circuit" }
-        ]
-    },
-    "elec_mag": {
-        chap: "4. 電磁気",
-        title: "磁場・電磁誘導・交流回路",
-        formulas: [
-            { name: "ローレンツ力", math: "F = qvB \\sin\\theta", usage: "磁場の中を運動する電子やイオンが受ける磁気的な力を求めるとき", reason: "動く電荷が作る磁界と外部磁界が干渉し、速度と磁場に垂直な力を受けます。", simText: "一様な磁場空間に飛び込んだ荷電粒子が、直交する力を受けて円軌道を描く様子です。", animType: "lorentz" },
-            { name: "ファラデーの電磁誘導の法則", math: "V = -N \\frac{\\Delta \\Phi}{\\Delta t}", usage: "コイルに磁石を近づけたときに生じる誘導起電力を求めるとき", reason: "コイル内部を貫く磁束の変化を妨げようとする向き（レンツの法則）に電圧が発生します。", simText: "磁石が接近・遠ざかることで、コイルを貫く磁力線と誘起される電流を表示します。", animType: "faraday" },
-            { name: "交流電圧の発生", math: "V = V_0 \\sin(\\omega t)", usage: "発電機など、磁場中でコイルを等速回転させて交流を得るとき", reason: "回転角にともない、コイルを貫く有効磁束が正弦波（サイン）状に変化するためです。", simText: "磁場内でのコイルの回転運動と、発生する正弦波交流電圧のグラフです。", animType: "ac_gen" }
-        ]
-    },
-
-    // === 5. 原子 ===
-    "atom_quantum": {
-        chap: "5. 原子",
-        title: "光電効果・ボーアモデル・原子核",
-        formulas: [
-            { name: "光電効果の式", math: "K_{\\max} = h\\nu - W", usage: "金属表面に光を照射して飛び出す電子の最大運動エネルギーを求めるとき", reason: "光を粒子（光子）と考え、１個のエネルギー h\\nu から脱出に必要な仕事関数 W を消費します。", simText: "限界以上の振動数の光子（波束）が衝突し、金属から光電子が飛び出す現象です。", animType: "photo" },
-            { name: "ボーアの量子条件", math: "mvr = n\\frac{h}{2\\pi}", usage: "水素原子内の電子が、エネルギーを放射せずに安定して回れる軌道を解くとき", reason: "電子を波（物質波）と考えたとき、円軌道の長さが波長の整数倍になる定常波条件です。", simText: "原子核の周囲に不連続な定常波軌道をとって周回する電子のモデルです。", animType: "bohr" },
-            { name: "アインシュタインの等価性 (質量欠損)", math: "E = \\Delta m c^2", usage: "核反応などで、反応前後の質量の減少から解放されるエネルギーを求めるとき", reason: "質量とエネルギーは本質的に等価であり、質量 Δm はエネルギーへと変換可能です。", simText: "原子核が融合・分裂した際の質量欠損から、莫大なエネルギーが放射されるイメージです。", animType: "mass" }
+            { name: "光電効果の公式", math: "K_{max} = h\\nu - W", usage: "金属に光を当てて飛び出す電子の最大運動エネルギーを求めるとき", reason: "光子1個のエネルギー hν から、金属から脱出する仕事関数 W を差し引いた残りが電子の運動エネルギーになります。", simText: "光子（hν）の衝突により、金属から光電子（e⁻）が叩き出される様子です。", animType: "photo" },
+            { name: "ボーアの量子化条件", math: "mvr = n\\frac{h}{2\\pi}", usage: "水素原子内の電子の安定軌道を説明するとき", reason: "電子の物質波が軌道1周で定常波を作るため、角運動量が不連続（量子化）になります。", simText: "原子核の周りを、特定の不連続な軌道（n=1, 2...）で周回する電子のモデルです。", animType: "bohr" },
+            { name: "アインシュタインの質量エネルギー", math: "E = \\Delta m \\cdot c^2", usage: "核反応や質量欠損によるエネルギー解放を計算するとき", reason: "質量とエネルギーは等価であり、極小の質量欠損Δmが莫大なエネルギーEに化けます。", simText: "質量欠損Δmが発生した瞬間に、莫大なエネルギーEが放出されるイメージです。", animType: "mass" }
         ]
     }
 };
 
-// ----------------------------------------------------
-// メニューの構築・イベント設定
-// ----------------------------------------------------
+// ------------------------------------------
+// メニューと公式カードの構築ロジック
+// ------------------------------------------
 const menuList = document.getElementById('menu-list');
 let currentChap = "";
 let chapGroup = null;
@@ -233,9 +197,7 @@ if (typeof physicsData !== 'undefined') {
     setTimeout(() => { const firstItem = document.querySelector('.chapter-list .item'); if(firstItem) firstItem.click(); }, 100);
 }
 
-// ----------------------------------------------------
-// Canvas 設定・基本コントロール
-// ----------------------------------------------------
+// Canvas 設定
 const canvas = document.getElementById('sim-canvas');
 const ctx = canvas.getContext('2d');
 let animType = "";
@@ -245,8 +207,10 @@ let scale = 1.0, panX = 0, panY = 0;
 let isDragging = false, lastX = 0, lastY = 0;
 
 function resizeCanvas() { 
-    canvas.width = canvas.parentElement.clientWidth; 
-    canvas.height = canvas.parentElement.clientHeight; 
+    if (canvas.parentElement) {
+        canvas.width = canvas.parentElement.clientWidth; 
+        canvas.height = canvas.parentElement.clientHeight; 
+    }
 }
 window.addEventListener('resize', resizeCanvas); 
 resizeCanvas();
@@ -262,7 +226,7 @@ function setAnimation(type) {
     if(zoomSlider && zoomVal) { zoomSlider.value = 1.0; zoomVal.innerText = "1.0x"; }
 }
 
-// コントロールUIイベント
+// コントロールUI
 const speedSlider = document.getElementById('speedSlider');
 if(speedSlider) speedSlider.addEventListener('input', e => document.getElementById('speedVal').innerText = parseFloat(e.target.value).toFixed(2) + "x");
 const zoomSlider = document.getElementById('zoomSlider');
@@ -272,7 +236,7 @@ if(playBtn) playBtn.onclick = () => { isPlaying = !isPlaying; playBtn.innerText 
 const resetBtn = document.getElementById('resetBtn');
 if(resetBtn) resetBtn.onclick = () => setAnimation(animType);
 
-// マウスによるパン(画面移動)・ズーム操作
+// マウス操作
 canvas.addEventListener('mousedown', e => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
 canvas.addEventListener('mousemove', e => { if(isDragging) { panX += e.clientX - lastX; panY += e.clientY - lastY; lastX = e.clientX; lastY = e.clientY; } });
 window.addEventListener('mouseup', () => isDragging = false);
@@ -283,9 +247,9 @@ canvas.addEventListener('wheel', e => {
     if(document.getElementById('zoomVal')) document.getElementById('zoomVal').innerText = scale.toFixed(1) + "x"; 
 }, { passive: false });
 
-// ----------------------------------------------------
-// 描画ユーティリティ (太文字を解消し、シャドウで視認性を確保)
-// ----------------------------------------------------
+// ====================================================
+// 描画ユーティリティ
+// ====================================================
 function dLine(x1, y1, x2, y2, color, w=2, dash=[]) {
     ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash);
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
@@ -313,7 +277,7 @@ function dB(x, y, w, h, color) {
     ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 2; ctx.strokeRect(x-w/2, y-h/2, w, h);
 }
 
-function dAng(x, y, r, a1, a2, label, color) {
+function dAng(x, y, r, a1, a2, label, color="#2c3e50") {
     ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, r, a1, a2, false); ctx.closePath();
     ctx.fillStyle = color + "33"; ctx.fill(); ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.stroke();
     let m = (a1+a2)/2; 
@@ -326,7 +290,7 @@ function dTxt(t, x, y, c="#2c3e50", f="16px 'Hiragino Sans', Arial, sans-serif")
     ctx.shadowColor = "rgba(255, 255, 255, 0.9)";
     ctx.shadowBlur = 5;
     ctx.fillText(t, x, y);
-    ctx.shadowBlur = 0; // リセット
+    ctx.shadowBlur = 0; 
 }
 
 function dMath(t, x, y, c="#2c3e50", size=20) {
@@ -358,9 +322,9 @@ function drawAxis(ox, oy, w, h, xL, yL) {
     dMath("O", ox-15, oy+15, '#7f8c8d');
 }
 
-// ----------------------------------------------------
-// メインループ (全分野をグラフィカルに描画)
-// ----------------------------------------------------
+// ====================================================
+// メインループ
+// ====================================================
 function render() {
     requestAnimationFrame(render);
     try {
@@ -383,7 +347,9 @@ function render() {
         let t = time % 6; 
         if(!animType) { dTxt("シミュレーションを選択してください。", -120, 0, "#7f8c8d"); ctx.restore(); return; }
 
-        // 1. 力学: 直線運動・加速度・仕事
+        // ----------------------------------------------------
+        // 1. 力学: 直線運動・加速度
+        // ----------------------------------------------------
         if (animType === "work_cos") {
             dFormula("W = F x cosθ", -60, -120);
             ctx.fillStyle='#bdc3c7'; ctx.fillRect(-200, 40, 400, 5);
@@ -416,8 +382,10 @@ function render() {
                 ctx.stroke();
             }
         }
-        // 2. 力学: 落体の運動 (投げ下ろし・投げ上げ)
-        else if (animType.includes("fall") || animType.includes("throw")) {
+        // ----------------------------------------------------
+        // 2. 力学: 落体の運動
+        // ----------------------------------------------------
+        else if (animType.includes("fall") || animType.includes("throw") || animType.includes("angle")) {
             dFormula("y = v₀t + 1/2 gt²,  v = v₀ + gt", -120, -160);
             let startY = animType.includes("throw") && !animType.includes("down") ? 100 : -100;
             let startX = animType.includes("angle") ? -150 : 0;
@@ -437,7 +405,9 @@ function render() {
             dA(cx+25, cy, cx+25, cy+cvy*0.4, '#2980b9', 'v'); dA(cx-25, cy, cx-25, cy+g*0.6, '#27ae60', 'g');
             if(v0y !== 0 && t < 0.8) dA(startX, startY, startX+v0x*0.4, startY+v0y*0.4, '#8e44ad', 'v₀');
         }
+        // ----------------------------------------------------
         // 3. 力学: 力・摩擦・ばね
+        // ----------------------------------------------------
         else if (animType.includes("force") || animType.includes("normal") || animType.includes("tension") || animType.includes("spring") || animType.includes("friction") || animType.includes("law")) {
             ctx.fillStyle='#7f8c8d'; ctx.fillRect(-150, 40, 300, 5);
             if(animType.includes("spring")) {
@@ -464,7 +434,9 @@ function render() {
                 }
             }
         }
+        // ----------------------------------------------------
         // 4. 力学: 圧力と浮力
+        // ----------------------------------------------------
         else if (animType.includes("pressure") || animType.includes("buoyancy") || animType.includes("pascal")) {
             if(animType.includes("buoyancy")) {
                 dFormula("F = ρVg (浮力)", -60, -120);
@@ -482,8 +454,9 @@ function render() {
                 dMath("F", -10, -80, '#e74c3c');
             }
         }
+        // ----------------------------------------------------
         // 5. 力学: モーメント・重心
-        // 剛体のバランスと重心
+        // ----------------------------------------------------
         else if (animType.includes("moment") || animType.includes("balance") || animType.includes("center")) {
             if(animType.includes("center")) {
                 dFormula("x_G = (m₁x₁ + m₂x₂) / (m₁ + m₂)", -120, -120);
@@ -503,7 +476,9 @@ function render() {
                 dB(80,-25,40,40,'#e74c3c'); dA(80,-25,80,70,'#e74c3c','F₂'); dMath("l₂", 40, -15);
             }
         }
+        // ----------------------------------------------------
         // 6. 力学: 運動量・衝突・反発係数
+        // ----------------------------------------------------
         else if (animType.includes("momentum") || animType.includes("impulse") || animType.includes("collision") || animType.includes("bounce") || animType.includes("restitution")) {
             let t2 = time%3;
             if(animType.includes("impulse")) {
@@ -526,7 +501,9 @@ function render() {
                 dA(x2, -30, x2+(t2>=1.5?80:0), -30, '#e74c3c', t2<1.5?'v₂=0':'v₂\'');
             }
         }
+        // ----------------------------------------------------
         // 7. 力学: エネルギー保存則
+        // ----------------------------------------------------
         else if (animType.includes("energy") || animType.includes("power") || (animType.includes("pendulum") && !animType.includes("t"))) {
             dFormula("E = K + U = 1/2 mv² + mgh = 一定", -140, -160);
             let a = Math.sin(time*2)*0.8;
@@ -544,7 +521,9 @@ function render() {
             ctx.fillStyle='#e67e22'; ctx.fillRect(160, 100-U, 30, U); dMath("U", 165, 130, '#e67e22');
             ctx.fillStyle='#8e44ad'; ctx.fillRect(200, 0, 30, 100);   dMath("E", 205, 130, '#8e44ad'); 
         }
+        // ----------------------------------------------------
         // 8. 力学: 円運動
+        // ----------------------------------------------------
         else if (animType.includes("circular") || animType.includes("centripetal") || animType.includes("centrifugal")) {
             dFormula("v = rω,  a = rω²,  F = mrω²", -120, -150);
             let r = 80; dC(0,0,r,'#bdc3c7',false); dC(0,0,5,'#f1c40f');
@@ -555,7 +534,9 @@ function render() {
             if(animType.includes("centrifugal")) dA(bx, by, bx+50*Math.cos(a), by+50*Math.sin(a), '#e67e22', 'mrω²');
             else dA(bx, by, bx*0.4, by*0.4, '#e74c3c', 'F');
         }
+        // ----------------------------------------------------
         // 9. 力学: 万有引力・ケプラーの法則
+        // ----------------------------------------------------
         else if (animType.includes("gravity") || animType.includes("kepler") || animType.includes("universal")) {
             dFormula("F = G (m₁m₂) / r²", -70, -150);
             let a = time;
@@ -566,7 +547,9 @@ function render() {
             dLine(0,0, px, py, "#7f8c8d", 1, [5,5]); dMath("r", px/2, py/2-10);
             ctx.beginPath(); ctx.strokeStyle='rgba(189, 195, 199, 0.5)'; ctx.arc(0,0,120,0,Math.PI*2); ctx.stroke();
         }
+        // ----------------------------------------------------
         // 10. 力学: 単振動
+        // ----------------------------------------------------
         else if (animType.includes("shm") || animType.includes("harmonic") || animType.includes("oscillation") || animType === "pendulum_t") {
             dFormula("x = A sin(ωt),  F = -Kx", -100, -150);
             let R = 80, o = 1.5, a = time*o; let px = R*Math.cos(a), py = R*Math.sin(a);
@@ -582,7 +565,9 @@ function render() {
             if(animType.includes("v")) dA(70, py, 70, py+R*o*Math.cos(a)*0.5, '#2980b9', 'v');
             if(animType.includes("a") || animType.includes("f")) dA(90, py, 90, py-py*0.5, '#e74c3c', 'F');
         }
+        // ----------------------------------------------------
         // 11. 熱力学: 熱量・比熱・状態変化
+        // ----------------------------------------------------
         else if (animType.includes("temp") || animType.includes("heat") || animType.includes("latent") || animType.includes("state")) {
             dFormula("Q = mcΔT", -50, -150);
             ctx.fillStyle = 'rgba(236, 240, 241, 0.8)'; ctx.fillRect(-100,-80,200,160);
@@ -597,7 +582,9 @@ function render() {
             dMath("T", -150, 75, '#e74c3c'); 
             if(animType.includes("heat")) dA(0, 120, 0, 90, '#e74c3c', 'Q');
         }
-        // 12. 熱力学: 気体の法則・第一法則
+        // ----------------------------------------------------
+        // 12. 熱力学: 気体の法則・熱力学第一法則
+        // ----------------------------------------------------
         else if (animType.includes("gas") || animType.includes("boyle") || animType.includes("charles") || animType.includes("kinetic") || animType.includes("internal") || animType.includes("thermo") || animType.includes("piston") || animType.includes("engine") || animType.includes("molar")) {
             if(animType.includes("thermo") || animType.includes("internal")) dFormula("ΔU = Q + W", -60, -150);
             else dFormula("pV = nRT", -50, -150);
@@ -613,7 +600,9 @@ function render() {
                 dC(px, py, 4, '#e67e22');
             }
         }
+        // ----------------------------------------------------
         // 13. 波動: 波の基本・音波・ドップラー効果
+        // ----------------------------------------------------
         else if (animType.includes("wave") || animType.includes("sound") || animType.includes("doppler") || animType.includes("interference") || animType.includes("beat") || animType.includes("pipe") || animType.includes("string") || animType.includes("transverse") || animType.includes("longitudinal")) {
             if (animType.includes("doppler")) {
                 dFormula("f' = f (V - v_o) / (V - v_s)", -100, -150);
@@ -640,7 +629,9 @@ function render() {
                 dA(peak1, -70, peak2, -70, '#2980b9', 'λ'); dLine(peak1, -60, peak1, -80, '#2980b9'); dLine(peak2, -60, peak2, -80, '#2980b9');
             }
         }
-        // 14. 光学: 屈折・反射・レンズ
+        // ----------------------------------------------------
+        // 14. 光学: 屈折・反射・レンズ・回折
+        // ----------------------------------------------------
         else if (animType.includes("refract") || animType.includes("reflect") || animType.includes("lens") || animType.includes("slit") || animType.includes("diffraction") || animType.includes("light")) {
             if(animType.includes("lens")) {
                 dFormula("1/a + 1/b = 1/f", -60, -150);
@@ -672,7 +663,9 @@ function render() {
                 if(!isTotal) { dAng(0, 0, 60, Math.PI/2 - aR, Math.PI/2, "r", "#2980b9"); dA(ix, iy, 0, iy, '#e74c3c', 'sin i', true); dA(rx, ry, 0, ry, '#2980b9', 'sin r', true); }
             }
         }
+        // ----------------------------------------------------
         // 15. 電磁気: クーロン・電場・コンデンサー・回路
+        // ----------------------------------------------------
         else if (animType.includes("coulomb") || animType.includes("field") || animType.includes("voltage") || animType.includes("capacitor") || animType.includes("circuit") || animType.includes("ohm") || animType.includes("kirchhoff") || animType.includes("joule") || animType.includes("electric")) {
             if(animType.includes("coulomb") || animType.includes("field")) {
                 dFormula("F = k q₁q₂ / r²,  E = F/q", -100, -130);
@@ -697,7 +690,9 @@ function render() {
                 dA(-60, 0, -60, -30, "#e67e22", "I"); // 電流
             }
         }
+        // ----------------------------------------------------
         // 16. 電磁気: 磁場・ローレンツ力・電磁誘導・交流
+        // ----------------------------------------------------
         else if (animType.includes("lorentz") || animType.includes("mag") || animType.includes("ampere") || animType.includes("faraday") || animType.includes("lenz") || animType.includes("induct") || animType.includes("ac_") || animType.includes("reactance") || animType.includes("impedance") || animType.includes("resonance")) {
             if(animType.includes("lorentz")) {
                 dFormula("F = qvB sinθ", -60, -150);
@@ -736,7 +731,9 @@ function render() {
                 dTxt("フェーザ図 (位相のズレ)", -90, -120);
             }
         }
+        // ----------------------------------------------------
         // 17. 原子: 光電効果・ボーアモデル・核反応
+        // ----------------------------------------------------
         else if (animType.includes("photo") || animType.includes("compton") || animType.includes("bohr") || animType.includes("atom") || animType.includes("decay") || animType.includes("mass") || animType.includes("matter") || animType.includes("work_func") || animType.includes("modern")) {
             if(animType.includes("photo") || animType.includes("work")) {
                 dFormula("K_max = hν - W", -70, -150);
@@ -755,7 +752,6 @@ function render() {
                 dA(50, 0, 120, 0, "#f1c40f", "Energy E");
             }
         }
-        // フォールバック (不測の事態用)
         else {
             dFormula("Simulation Running...", -80, -120);
             dTxt("設定されたアニメーション (" + animType + ") を実行中", -140, 0, "#7f8c8d");
