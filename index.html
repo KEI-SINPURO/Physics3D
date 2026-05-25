@@ -3,56 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>高校物理 2Dシミュレーションエンジン</title>
+    <title>プレミアム高校物理2Dシミュレーター</title>
+    
     <link rel="stylesheet" href="style.css">
-    <script>
-        window.MathJax = {
-            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
-        };
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
 </head>
 <body>
-    <div id="app">
-        <div id="sidebar">
-            <h2>物理シミュレーション</h2>
-            <div id="menu-list"></div>
+
+    <div id="sidebar">
+        <div id="sidebar-header">
+            <h1>高校物理 2D Engine</h1>
+        </div>
+        <div id="menu-list">
+            </div>
+    </div>
+
+    <div id="main-content">
+        <div id="header-bar">
+            <div id="unit-title">単元を選択してください</div>
         </div>
         
-        <div id="main-content">
-            <h1 id="unit-title">単元を選択してください</h1>
-            
-            <div id="workspace">
-                <div id="canvas-container">
-                    <canvas id="sim-canvas"></canvas>
-                    <div id="controls">
-                        <button id="playBtn">⏸ 一時停止</button>
-                        <button id="resetBtn">🔄 リセット</button>
-                        <div class="slider-group">
-                            <label for="speedSlider">再生速度:</label>
-                            <input type="range" id="speedSlider" min="0.0" max="2.0" step="0.1" value="1.0">
-                            <span id="speedVal">1.00x</span>
-                        </div>
-                        <div class="slider-group">
-                            <label for="zoomSlider">ズーム:</label>
-                            <input type="range" id="zoomSlider" min="0.5" max="3.0" step="0.1" value="1.0">
-                            <span id="zoomVal">1.0x</span>
-                        </div>
-                    </div>
+        <div id="sim-container">
+            <canvas id="sim-canvas"></canvas>
+
+            <div id="control-panel">
+                <button id="playBtn">⏸ 一時停止</button>
+                <button id="resetBtn">🔄 リセット</button>
+                <div class="ctrl-group">
+                    <span>速度:</span>
+                    <input type="range" id="speedSlider" min="0.1" max="2.0" step="0.1" value="1.0">
+                    <span id="speedVal">1.00x</span>
                 </div>
-                
-                <div id="details-panel">
-                    <div id="formula-cards-container"></div>
-                    <div id="sim-desc-container">
-                        <h3>シミュレーション解説</h3>
-                        <p id="sim-desc">公式カードを選択すると、ここに解説が表示されます。</p>
-                    </div>
+                <div class="ctrl-group">
+                    <span>ズーム:</span>
+                    <input type="range" id="zoomSlider" min="0.5" max="3.0" step="0.1" value="1.0">
+                    <span id="zoomVal">1.0x</span>
                 </div>
+            </div>
+
+            <div id="info-panel">
+                <div id="sim-desc">左メニューから単元を選択すると、ここにシミュレーションの概要が表示されます。</div>
+                <div id="formula-cards-container">
+                    </div>
             </div>
         </div>
     </div>
 
-    <script src="physics-data.js"></script>
-    <script src="app.js"></script>
+    <script src="physicsData.js"></script>
+    <script src="simulation.js"></script>
 </body>
 </html>
