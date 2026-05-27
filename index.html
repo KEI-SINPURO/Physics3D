@@ -3,54 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>高校物理 2Dフルシミュレーター (究極96式選)</title>
-    
+    <title>3D物理シミュレーション | Physics3D</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <link rel="stylesheet" href="style.css">
-    
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
 </head>
 <body>
 
-    <div id="sidebar">
-        <div id="sidebar-header">
-            <h1>高校物理 2D Engine (96選)</h1>
-        </div>
-        <div id="menu-list">
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>物理シミュレーション</h2>
             </div>
-    </div>
-
-    <div id="main-content">
-        <div id="header-bar">
-            <div id="unit-title">左メニューから単元を選択してください</div>
+            <ul class="menu-list" id="menu-list">
+                </ul>
         </div>
-        
-        <div id="sim-container">
-            <canvas id="sim-canvas"></canvas>
 
-            <div id="control-panel">
-                <button id="playBtn">⏸ 一時停止</button>
-                <button id="resetBtn">🔄 リセット</button>
-                <div class="ctrl-group">
-                    <span>速度:</span>
-                    <input type="range" id="speedSlider" min="0.1" max="2.0" step="0.1" value="1.0">
-                    <span id="speedVal">1.00x</span>
-                </div>
-                <div class="ctrl-group">
-                    <span>ズーム:</span>
-                    <input type="range" id="zoomSlider" min="0.5" max="3.0" step="0.1" value="1.0">
-                    <span id="zoomVal">1.0x</span>
-                </div>
+        <div class="main-content">
+            <div class="main-header">
+                <h1 id="unit-title">単元を選択してください</h1>
             </div>
 
-            <div id="info-panel">
-                <div id="sim-desc">公式カードを選択すると、対応した物理シミュレーションが即座に起動します。</div>
-                <div id="formula-cards-container">
+            <div class="workspace">
+                <div class="canvas-container" id="canvas-container">
+                    <div class="canvas-placeholder" id="canvas-placeholder">
+                        左のメニューから物理単元を選択すると、厳密な物理計算に基づく3Dシミュレーションがここに開始されます。
                     </div>
+                </div>
+
+                <div class="panel-container" id="panel-container" style="visibility: hidden;">
+                    <div class="card">
+                        <h3>パラメーター設定</h3>
+                        <div id="dynamic-controls"></div>
+                    </div>
+                    <div class="card">
+                        <h3>シミュレーション解説</h3>
+                        <div class="explanation-content" id="explanation-text"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bottom-bar">
+                <button class="btn btn-primary" id="btn-play-pause" onclick="physicsApp.togglePlayPause()" style="min-width: 100px;">一時停止</button>
+                <button class="btn btn-secondary" id="btn-reset" onclick="physicsApp.resetSimulation()">リセット</button>
+                
+                <div class="bar-control-group" style="margin-left: auto;">
+                    <label>再生速度: <span id="txt-speed">1.00x</span></label>
+                    <input type="range" class="bar-slider" id="slide-speed" min="0.1" max="3.0" step="0.1" value="1.0" oninput="physicsApp.changeSpeed(this.value)">
+                </div>
+
+                <div class="bar-control-group">
+                    <label>カメラズーム: <span id="txt-zoom">1.0x</span></label>
+                    <input type="range" class="bar-slider" id="slide-zoom" min="0.5" max="2.0" step="0.1" value="1.0" oninput="physicsApp.changeZoom(this.value)">
+                </div>
             </div>
         </div>
     </div>
 
-    <script src="physicsData.js"></script>
-    <script src="simulation.js"></script>
+    <script src="katex.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
