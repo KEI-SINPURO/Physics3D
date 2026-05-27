@@ -3,64 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D物理シミュレーション | Physics3D</title>
+    <title>物理公式100選 ＆ 3Dシミュレーション</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <div class="app-container">
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <h2>物理シミュレーション</h2>
-            </div>
-            <ul class="menu-list" id="menu-list">
-                </ul>
+    <header>
+        <h1>⚛️ 物理マスター: 公式暗記 ＆ 3Dシミュレーション</h1>
+        <div class="tabs">
+            <button id="tab-flashcard" class="tab-btn active" onclick="uiController.switchMode('flashcard')">📝 公式暗記モード</button>
+            <button id="tab-sim" class="tab-btn" onclick="uiController.switchMode('sim')">🔬 3Dシミュレーション</button>
         </div>
+    </header>
 
-        <div class="main-content">
-            <div class="main-header">
-                <h1 id="unit-title">単元を選択してください</h1>
+    <main>
+        <aside class="sidebar">
+            <ul id="menu-list"></ul>
+        </aside>
+
+        <section class="content">
+            
+            <div id="view-flashcard" class="view-section">
+                <div class="stats-bar">
+                    暗記完了: <span id="master-count" class="highlight">0</span> / 100
+                </div>
+                <div id="flashcard-container" class="grid-container"></div>
             </div>
 
-            <div class="workspace">
-                <div class="canvas-container" id="canvas-container">
-                    <div class="canvas-placeholder" id="canvas-placeholder">
-                        左のメニューから物理単元を選択すると、厳密な物理計算に基づく3Dシミュレーションがここに開始されます。
-                    </div>
+            <div id="view-sim" class="view-section" style="display: none;">
+                <div class="sim-header">
+                    <h2 id="unit-title">左のメニューから実験を選んでください</h2>
+                    <div class="linked-formula">連動公式: <span id="current-sim-formula">-</span></div>
                 </div>
 
-                <div class="panel-container" id="panel-container" style="visibility: hidden;">
-                    <div class="card">
-                        <h3>パラメーター設定</h3>
-                        <div id="dynamic-controls"></div>
+                <div class="sim-body">
+                    <div class="canvas-wrapper">
+                        <div id="canvas-placeholder">ここに3Dシミュレーションが表示されます</div>
+                        <div id="canvas-container"></div>
                     </div>
-                    <div class="card">
-                        <h3>シミュレーション解説</h3>
-                        <div class="explanation-content" id="explanation-text"></div>
+
+                    <div id="panel-container" class="control-panel" style="visibility: hidden;">
+                        <div class="panel-section">
+                            <h3>⚙️ パラメーター設定</h3>
+                            <div id="dynamic-controls"></div>
+                        </div>
+
+                        <div class="panel-section">
+                            <h3>⏯️ 再生コントロール</h3>
+                            <div class="control-actions">
+                                <button id="btn-play-pause" onclick="physicsApp.togglePlayPause()">一時停止</button>
+                                <button onclick="physicsApp.resetSimulation()">リセット</button>
+                            </div>
+                            <div class="control-item mt-2">
+                                <span>再生速度: <span id="txt-speed">1.0x</span></span>
+                                <input type="range" min="0.1" max="3.0" step="0.1" value="1.0" oninput="physicsApp.changeSpeed(this.value)">
+                            </div>
+                            <div class="control-item">
+                                <span>ズーム: <span id="txt-zoom">1.0x</span></span>
+                                <input type="range" min="0.5" max="3.0" step="0.1" value="1.0" oninput="physicsApp.changeZoom(this.value)">
+                            </div>
+                        </div>
+
+                        <div class="panel-section explanation-box">
+                            <h3>解説</h3>
+                            <p id="explanation-text"></p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="bottom-bar">
-                <button class="btn btn-primary" id="btn-play-pause" onclick="physicsApp.togglePlayPause()" style="min-width: 100px;">一時停止</button>
-                <button class="btn btn-secondary" id="btn-reset" onclick="physicsApp.resetSimulation()">リセット</button>
-                
-                <div class="bar-control-group" style="margin-left: auto;">
-                    <label>再生速度: <span id="txt-speed">1.00x</span></label>
-                    <input type="range" class="bar-slider" id="slide-speed" min="0.1" max="3.0" step="0.1" value="1.0" oninput="physicsApp.changeSpeed(this.value)">
-                </div>
+        </section>
+    </main>
 
-                <div class="bar-control-group">
-                    <label>カメラズーム: <span id="txt-zoom">1.0x</span></label>
-                    <input type="range" class="bar-slider" id="slide-zoom" min="0.5" max="2.0" step="0.1" value="1.0" oninput="physicsApp.changeZoom(this.value)">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="katex.js"></script>
+    <script src="formulas.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
