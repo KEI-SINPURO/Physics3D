@@ -23,33 +23,42 @@ class UIController {
         menu.innerHTML = '';
 
         if (this.currentMode === 'flashcard') {
+            // 暗記モード時はカテゴリフィルター
             const categories = ["すべて", "力学", "熱力学", "波動", "電磁気", "原子"];
             categories.forEach(cat => {
                 const li = document.createElement('li');
                 li.className = 'menu-item';
-                li.textContent = cat;
-                li.onclick = () => this.renderFlashcards(cat);
+                li.textContent = `📁 ${cat}`;
+                li.onclick = () => {
+                    document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+                    li.classList.add('active');
+                    this.renderFlashcards(cat);
+                };
                 menu.appendChild(li);
             });
             this.renderFlashcards("すべて");
         } else {
-            physicsApp.renderMenu();
+            // シミュレーションモード時は、101公式がずらりとメニューに並ぶ！
+            PHYSICS_FORMULAS.forEach(f => {
+                const li = document.createElement('li');
+                li.className = 'menu-item';
+                li.textContent = `No.${f.id} [${f.category}] ${f.name}`;
+                li.onclick = () => physicsApp.selectFormula(f.id);
+                li.setAttribute('data-id', f.id);
+                menu.appendChild(li);
+            });
         }
     }
 
     renderFlashcards(filterCategory) {
         const container = document.getElementById('flashcard-container');
         container.innerHTML = '';
-
-        const targetFormulas = filterCategory === "すべて" 
-            ? PHYSICS_FORMULAS 
-            : PHYSICS_FORMULAS.filter(f => f.category === filterCategory);
+        const targetFormulas = filterCategory === "すべて" ? PHYSICS_FORMULAS : PHYSICS_FORMULAS.filter(f => f.category === filterCategory);
 
         targetFormulas.forEach(f => {
             const card = document.createElement('div');
             card.className = 'formula-card';
             const isMastered = this.masteredList.includes(f.id);
-
             card.innerHTML = `
                 <div class="card-category">${f.category} (No.${f.id})</div>
                 <div class="card-name">${f.name}</div>
@@ -70,29 +79,21 @@ class UIController {
 
     toggleMaster(id, btn) {
         const index = this.masteredList.indexOf(id);
-        if (index > -1) {
-            this.masteredList.splice(index, 1);
-            btn.classList.remove('active');
-            btn.textContent = '未暗記';
-        } else {
-            this.masteredList.push(id);
-            btn.classList.add('active');
-            btn.textContent = '覚えた！';
-        }
+        if (index > -1) { this.masteredList.splice(index, 1); btn.classList.remove('active'); btn.textContent = '未暗記'; }
+        else { this.masteredList.push(id); btn.classList.add('active'); btn.textContent = '覚えた！'; }
         localStorage.setItem('physics_mastered_ids', JSON.stringify(this.masteredList));
         this.updateMasterCount();
     }
 
     updateMasterCount() {
-        const el = document.getElementById('master-count');
-        if (el) el.textContent = this.masteredList.length;
+        const el = document.getElementById('master-count'); if (el) el.textContent = this.masteredList.length;
     }
 }
 
 // ============================================================================
-// 2. 2D 物理シミュレーション コアエンジンクラス
+// 2. 自動変数解析 ＆ 万能5大シミュレーションエンジン
 // ============================================================================
-class PhysicsEngine {
+class UniversalEngine {
     constructor() {
         this.canvas = document.getElementById('physics-canvas');
         this.ctx = this.canvas.getContext('2d');
@@ -100,10 +101,39 @@ class PhysicsEngine {
         this.panel = document.getElementById('panel-container');
         this.titleElement = document.getElementById('unit-title');
         
-        this.activeUnit = null;
+        this.activeFormula = null;
         this.isPaused = false;
         this.timeScale = 1.0;
-        this.units = {};
+        this.simTime = 0;
+        this.params = {}; // 解析された変数が格納される場所
+        
+        // 熱運動用粒子、波動トレイル、半減期粒子などの汎用バッファ
+        this.particles = [];
+        this.trail = [];
+
+        // 万能変数定義ライブラリ（数式文字列からこれらを自動検知してスライダー化する）
+        this.varLibrary = {
+            "v₀": { name: "初速度", min: 0, max: 25, def: 12, unit: "m/s", key: "v0" },
+            "a": { name: "加速度", min: -8, max: 8, def: 3, unit: "m/s²", key: "a" },
+            "g": { name: "重力加速度", min: 0, max: 20, def: 9.8, unit: "m/s²", key: "g" },
+            "θ": { name: "角度", min: 10, max: 80, def: 45, unit: "度", key: "theta" },
+            "k": { name: "ばね/クーロン定数", min: 5, max: 40, def: 15, unit: "N/m", key: "k" },
+            "m": { name: "質量", min: 0.5, max: 4.5, def: 2.0, unit: "kg", key: "m" },
+            "μ": { name: "摩擦係数", min: 0, max: 0.8, def: 0.2, unit: "", key: "mu" },
+            "μ'": { name: "動摩擦係数", min: 0, max: 0.8, def: 0.15, unit: "", key: "mu" },
+            "ρ": { name: "密度", min: 0.5, max: 2.5, def: 1.2, unit: "kg/m³", key: "rho" },
+            "T": { name: "絶対温度", min: 100, max: 500, def: 300, unit: "K", key: "T" },
+            "V": { name: "体積 / 電圧", min: 1, max: 10, def: 5, unit: "L / V", key: "V" },
+            "P": { name: "気体の圧力", min: 1, max: 10, def: 5, unit: "atm", key: "P" },
+            "f": { name: "振動数", min: 1, max: 10, def: 3, unit: "Hz", key: "f" },
+            "λ": { name: "波長", min: 20, max: 120, def: 60, unit: "px", key: "lambda" },
+            "q": { name: "電荷", min: -2, max: 2, def: 1, unit: "C", key: "q" },
+            "Q": { name: "標的電気量", min: -5, max: 5, def: 3, unit: "C", key: "Q" },
+            "B": { name: "磁束密度", min: 0, max: 3, def: 1.5, unit: "T", key: "B" },
+            "E": { name: "電場の強さ", min: 0, max: 20, def: 10, unit: "N/C", key: "E" },
+            "R": { name: "電気抵抗", min: 1, max: 50, def: 15, unit: "Ω", key: "R" },
+            "I": { name: "電流", min: 0, max: 5, def: 2, unit: "A", key: "I" }
+        };
 
         this.animate = this.animate.bind(this);
         requestAnimationFrame(this.animate);
@@ -113,29 +143,10 @@ class PhysicsEngine {
     resizeCanvas() {
         if (!this.canvas.parentElement) return;
         const rect = this.canvas.parentElement.getBoundingClientRect();
-        this.canvas.width = rect.width;
-        this.canvas.height = rect.height;
-        if (this.activeUnit) this.activeUnit.onResize(this.canvas.width, this.canvas.height);
+        this.canvas.width = rect.width; this.canvas.height = rect.height;
     }
 
-    registerUnit(id, unitClass) {
-        this.units[id] = unitClass;
-    }
-
-    renderMenu() {
-        const menu = document.getElementById('menu-list');
-        menu.innerHTML = '';
-        Object.keys(this.units).forEach(id => {
-            const li = document.createElement('li');
-            li.className = 'menu-item';
-            li.textContent = this.units[id].unitName;
-            li.onclick = () => this.selectUnit(id);
-            li.setAttribute('data-id', id);
-            menu.appendChild(li);
-        });
-    }
-
-    selectUnit(id) {
+    selectFormula(id) {
         document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
         const activeItem = document.querySelector(`[data-id="${id}"]`);
         if (activeItem) activeItem.classList.add('active');
@@ -143,39 +154,58 @@ class PhysicsEngine {
         this.placeholder.style.display = 'none';
         this.panel.style.visibility = 'visible';
         
-        const UnitClass = this.units[id];
-        this.activeUnit = new UnitClass();
-        this.titleElement.textContent = UnitClass.unitName;
-        document.getElementById('current-sim-formula').textContent = UnitClass.linkedFormula;
+        this.activeFormula = PHYSICS_FORMULAS.find(f => f.id === id);
+        this.titleElement.textContent = `No.${this.activeFormula.id}: ${this.activeFormula.name} (${this.activeFormula.category})`;
+        document.getElementById('current-sim-formula').textContent = this.activeFormula.formula;
         
         this.resizeCanvas();
-        this.buildControls();
-        this.renderExplanation();
+        this.parseAndBuildControls();
         this.resetSimulation();
     }
 
-    buildControls() {
+    // 【コアロジック】数式をスキャンして自動でスライダーを作る天才関数
+    parseAndBuildControls() {
         const container = document.getElementById('dynamic-controls');
         container.innerHTML = '';
-        if (!this.activeUnit) return;
+        this.params = {};
 
-        this.activeUnit.getParameters().forEach(p => {
+        const formulaText = this.activeFormula.formula;
+        let hasControls = false;
+
+        Object.keys(this.varLibrary).forEach(symbol => {
+            // 数式テキストに特定の物理記号（v0やkなど）が含まれているかチェック
+            if (formulaText.includes(symbol) || (symbol === "v₀" && formulaText.includes("v₀"))) {
+                const config = this.varLibrary[symbol];
+                this.params[config.key] = config.def; // 初期値をセット
+
+                const item = document.createElement('div');
+                item.className = 'control-item';
+                item.innerHTML = `
+                    <div class="control-label">
+                        <span>${config.name} <span class="symbol-tag">${symbol}</span></span>
+                        <span id="val-${config.key}">${config.def} ${config.unit}</span>
+                    </div>
+                    <input type="range" class="control-slider" min="${config.min}" max="${config.max}" step="${(config.max-config.min)/20}" value="${config.def}" 
+                        oninput="physicsApp.params['${config.key}'] = parseFloat(this.value); document.getElementById('val-${config.key}').textContent = this.value + ' ${config.unit}';">
+                `;
+                container.appendChild(item);
+                hasControls = true;
+            }
+        });
+
+        // もし変数が見つからない簡易数式の場合、デフォルトの汎用変数を置く
+        if (!hasControls) {
+            this.params['generic'] = 5;
             const item = document.createElement('div');
             item.className = 'control-item';
             item.innerHTML = `
-                <div class="control-label">
-                    <span>${p.name} <span class="symbol-tag">${p.symbol}</span></span>
-                    <span id="val-${p.id}">${p.value} ${p.unit}</span>
-                </div>
-                <input type="range" class="control-slider" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.value}" 
-                    oninput="physicsApp.activeUnit.updateParameter('${p.id}', parseFloat(this.value)); document.getElementById('val-${p.id}').textContent = this.value + ' ${p.unit}';">
+                <div class="control-label"><span>シミュレーション調整係数</span><span id="val-generic">5</span></div>
+                <input type="range" class="control-slider" min="1" max="10" step="0.5" value="5" oninput="physicsApp.params['generic'] = parseFloat(this.value); document.getElementById('val-generic').textContent = this.value;">
             `;
             container.appendChild(item);
-        });
-    }
+        }
 
-    renderExplanation() {
-        document.getElementById('explanation-text').textContent = this.activeUnit ? this.activeUnit.getExplanation() : '';
+        document.getElementById('explanation-text').textContent = this.activeFormula.desc + "\n\n【連動中】左メニューで選んだ数式に基づき、2Dグラフィックスが自動構築されています。スライダーを動かしてベクトル変化を確認してください。";
     }
 
     togglePlayPause() {
@@ -183,347 +213,300 @@ class PhysicsEngine {
         document.getElementById('btn-play-pause').textContent = this.isPaused ? '再 生' : '一時停止';
     }
 
-    resetSimulation() { 
-        if (this.activeUnit) this.activeUnit.reset(); 
+    resetSimulation() {
+        this.simTime = 0;
+        this.trail = [];
+        this.particles = [];
+        const f = this.activeFormula;
+        if (!f) return;
+
+        // モード別の初期化
+        if (f.category === "熱力学") {
+            for (let i = 0; i < 20; i++) {
+                this.particles.push({
+                    x: 50 + Math.random() * 200, y: 50 + Math.random() * 200,
+                    vx: (Math.random() - 0.5) * 100, vy: (Math.random() - 0.5) * 100
+                });
+            }
+        } else if (f.category === "原子" && f.name.includes("半減期")) {
+            for (let i = 0; i < 150; i++) {
+                this.particles.push({ x: 40 + Math.random() * (this.canvas.width-80), y: 60 + Math.random() * (this.canvas.height-120), alive: true });
+            }
+        }
     }
-    
-    changeSpeed(val) { 
-        this.timeScale = parseFloat(val); 
-        document.getElementById('txt-speed').textContent = `${this.timeScale.toFixed(1)}x`; 
+
+    changeSpeed(val) {
+        this.timeScale = parseFloat(val);
+        document.getElementById('txt-speed').textContent = `${this.timeScale.toFixed(1)}x`;
     }
 
     drawArrow(ctx, fromX, fromY, toX, toY, color, width = 2) {
-        const headLength = 10; 
-        const dx = toX - fromX;
-        const dy = toY - fromY;
+        const headLength = 10; const dx = toX - fromX; const dy = toY - fromY;
         const angle = Math.atan2(dy, dx);
-        
-        ctx.strokeStyle = color;
-        ctx.fillStyle = color;
-        ctx.lineWidth = width;
-        
-        ctx.beginPath();
-        ctx.moveTo(fromX, fromY);
-        ctx.lineTo(toX, toY);
-        ctx.stroke();
-        
-        ctx.beginPath();
-        ctx.moveTo(toX, toY);
+        ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width;
+        ctx.beginPath(); ctx.moveTo(fromX, fromY); ctx.lineTo(toX, toY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(toX, toY);
         ctx.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), toY - headLength * Math.sin(angle - Math.PI / 6));
         ctx.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6), toY - headLength * Math.sin(angle + Math.PI / 6));
-        ctx.closePath();
-        ctx.fill();
+        ctx.closePath(); ctx.fill();
+    }
+
+    // ============================================================================
+    // 3. 【物理計算＆描画コア】毎フレーム駆動する万能物理レンダラー
+    // ============================================================================
+    step(dt) {
+        this.simTime += dt;
+        const f = this.activeFormula;
+        if (!f) return;
+
+        // 【熱力学】分子運動計算
+        if (f.category === "熱力学") {
+            const temp = this.params.T || 300;
+            const vol = this.params.V || 5;
+            const boxWidth = 100 + vol * 40;
+            const speedScale = Math.sqrt(temp / 300);
+
+            this.particles.forEach(p => {
+                p.x += p.vx * dt * speedScale; p.y += p.vy * dt * speedScale;
+                if (p.x < 30) { p.x = 30; p.vx *= -1; }
+                if (p.x > boxWidth) { p.x = boxWidth; p.vx *= -1; }
+                if (p.y < 40) { p.y = 40; p.vy *= -1; }
+                if (p.y > this.canvas.height - 40) { p.y = this.canvas.height - 40; p.vy *= -1; }
+            });
+        }
+        // 【原子・半減期】確率崩壊計算
+        else if (f.category === "原子" && f.name.includes("半減期")) {
+            const lambda = 0.15; 
+            this.particles.forEach(p => {
+                if (p.alive && Math.random() < lambda * dt) p.alive = false;
+            });
+        }
+    }
+
+    draw() {
+        const ctx = this.ctx; const w = this.canvas.width; const h = this.canvas.height;
+        const f = this.activeFormula;
+        if (!f) return;
+
+        // グリッド背景の描画
+        ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 1;
+        for (let x = 0; x < w; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+        for (let y = 0; y < h; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+
+        // パラメーターの安全なフォールバック取得
+        const v0 = this.params.v0 !== undefined ? this.params.v0 : 12;
+        const a = this.params.a !== undefined ? this.params.a : 2;
+        const g = this.params.g !== undefined ? this.params.g : 9.8;
+        const theta = (this.params.theta !== undefined ? this.params.theta : 45) * Math.PI / 180;
+        const k = this.params.k !== undefined ? this.params.k : 15;
+        const m = this.params.m !== undefined ? this.params.m : 2;
+
+        // ----------------------------------------------------
+        // 分野①：力学の万能レンダリング
+        // ----------------------------------------------------
+        if (f.category === "力学") {
+            // A. ばね・振動系公式の場合
+            if (f.formula.includes("k") || f.name.includes("振り子") || f.name.includes("弾性")) {
+                const centerX = w / 2; const centerY = h / 2;
+                const omega = Math.sqrt(k / m);
+                const amp = 5;
+                const dispX = amp * Math.cos(omega * this.simTime) * 20;
+
+                // ばね
+                ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(50, centerY);
+                let turns = 20; let stepX = (centerX + dispX - 50) / turns;
+                for(let i=0; i<turns; i++){ ctx.lineTo(50 + i*stepX, centerY + (i%2===0?20:-20)); }
+                ctx.lineTo(centerX + dispX, centerY); ctx.stroke();
+
+                // おもり
+                ctx.fillStyle = '#a855f7'; ctx.beginPath(); ctx.arc(centerX + dispX, centerY, 16, 0, Math.PI*2); ctx.fill();
+                
+                // ベクトル
+                const velX = -amp * omega * Math.sin(omega * this.simTime) * 15;
+                const forceX = -k * (dispX / 20) * 4;
+                this.drawArrow(ctx, centerX + dispX, centerY, centerX + dispX + velX, centerY, '#38bdf8', 3);
+                this.drawArrow(ctx, centerX + dispX, centerY - 25, centerX + dispX + forceX, centerY - 25, '#f43f5e', 3);
+            } 
+            // B. 円運動・万有引力系公式の場合
+            else if (f.formula.includes("ω") || f.formula.includes("r") || f.name.includes("引力")) {
+                const cx = w / 2; const cy = h / 2; const r = 100;
+                const speed = v0 * 0.2;
+                const angle = speed * this.simTime;
+                const bx = cx + r * Math.cos(angle); const by = cy + r * Math.sin(angle);
+
+                ctx.fillStyle = '#fab005'; ctx.beginPath(); ctx.arc(cx, cy, 20, 0, Math.PI*2); ctx.fill(); // 中心星
+                ctx.fillStyle = '#10b981'; ctx.beginPath(); ctx.arc(bx, by, 10, 0, Math.PI*2); ctx.fill(); // 惑星
+
+                // 速度・向心力ベクトル
+                const vx = -Math.sin(angle) * speed * 40; const vy = Math.cos(angle) * speed * 40;
+                this.drawArrow(ctx, bx, by, bx + vx, by + vy, '#38bdf8', 2.5);
+                this.drawArrow(ctx, bx, by, bx - Math.cos(angle)*50, by - Math.sin(angle)*50, '#f43f5e', 2.5);
+            }
+            // C. 放物・落下・投げ上げ公式の場合
+            else if (f.formula.includes("θ") || f.formula.includes("g") || f.name.includes("落下") || f.name.includes("投射")) {
+                const startX = 60; const startY = h - 60;
+                let curX = startX; let curY = startY;
+
+                let t = this.simTime;
+                let vx_now = 0; let vy_now = 0;
+
+                if (f.name.includes("斜方投射")) {
+                    curX += v0 * Math.cos(theta) * t * 20;
+                    curY -= (v0 * Math.sin(theta) * t - 0.5 * g * t * t) * 20;
+                    vx_now = v0 * Math.cos(theta); vy_now = v0 * Math.sin(theta) - g * t;
+                } else if (f.name.includes("自由落下")) {
+                    curY -= (-0.5 * g * t * t) * 20; vy_now = -g * t;
+                } else { // 投げ上げ・投げ下ろし等
+                    curY -= (v0 * t - 0.5 * g * t * t) * 20; vy_now = v0 - g * t;
+                }
+
+                if (curY > startY) { this.simTime = 0; curX = startX; curY = startY; } // 床に衝突したらリセット
+
+                ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(curX, curY, 10, 0, Math.PI*2); ctx.fill();
+                this.drawArrow(ctx, curX, curY, curX + vx_now*3, curY - vy_now*3, '#38bdf8', 2.5); // 速度
+                this.drawArrow(ctx, curX, curY, curX, curY + g * 3, '#f43f5e', 2.5); // 重力
+            }
+            // D. 直線等速・等加速度運動
+            else {
+                let t = this.simTime;
+                let posX = 60 + (v0 * t + 0.5 * a * t * t) * 5;
+                let currentV = v0 + a * t;
+                if (posX > w - 60) this.simTime = 0;
+
+                ctx.fillStyle = '#f43f5e'; ctx.fillRect(posX - 20, h/2 - 15, 40, 30); // 自動車に見立てたブロック
+                this.drawArrow(ctx, posX, h/2, posX + currentV*4, h/2, '#38bdf8', 3); // 速度
+                if (Math.abs(a) > 0.1) this.drawArrow(ctx, posX, h/2 - 25, posX + a * 10, h/2 - 25, '#f43f5e', 3); // 加速度
+            }
+        }
+
+        // ----------------------------------------------------
+        // 分野②：熱力学の万能レンダリング（分子運動）
+        // ----------------------------------------------------
+        else if (f.category === "熱力学") {
+            const vol = this.params.V || 5;
+            const boxWidth = 100 + vol * 40;
+
+            ctx.strokeStyle = '#475569'; ctx.lineWidth = 4;
+            ctx.strokeRect(25, 35, boxWidth - 20, h - 70); // シリンダー容器
+
+            this.particles.forEach(p => {
+                ctx.fillStyle = '#67e8f9'; ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI*2); ctx.fill();
+                this.drawArrow(ctx, p.x, p.y, p.x + p.vx*0.2, p.y + p.vy*0.2, '#38bdf8', 1);
+            });
+        }
+
+        // ----------------------------------------------------
+        // 分野③：波動の万能レンダリング（波形アニメーション）
+        // ----------------------------------------------------
+        else if (f.category === "波動") {
+            const freq = this.params.f || 3;
+            const lambda = this.params.lambda || 60;
+
+            if (f.name.includes("レンズ")) {
+                // レンズ・幾何光学シミュレーション
+                const cx = w/2; const cy = h/2;
+                ctx.strokeStyle = '#475569'; ctx.beginPath(); ctx.moveTo(50, cy); ctx.lineTo(w-50, cy); ctx.stroke(); // 光軸
+                ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(cx, cy-80); ctx.lineTo(cx, cy+80); ctx.stroke(); // レンズ
+                
+                // 物体矢印
+                ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 4;
+                this.drawArrow(ctx, cx - 120, cy, cx - 120, cy - 50, '#f59e0b', 4);
+                // 光線
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.7)'; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.moveTo(cx-120, cy-50); ctx.lineTo(cx, cy-50); ctx.lineTo(cx+120, cy+50); ctx.stroke(); // 平行光線
+                ctx.beginPath(); ctx.moveTo(cx-120, cy-50); ctx.lineTo(cx, cy); ctx.lineTo(cx+240, cy+100); ctx.stroke(); // 中心を通る光線
+            } else {
+                // 正弦波のリアルタイム描画
+                ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 3; ctx.beginPath();
+                for (let x = 40; x < w - 40; x += 2) {
+                    let y = h/2 + 50 * Math.sin(2 * Math.PI * (this.simTime * freq - x / lambda));
+                    if (x === 40) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+        }
+
+        // ----------------------------------------------------
+        // 分野④：電磁気の万能レンダリング（場の中の電荷運動）
+        // ----------------------------------------------------
+        else if (f.category === "電磁気") {
+            const q = this.params.q !== undefined ? this.params.q : 1;
+            const B = this.params.B !== undefined ? this.params.B : 1.5;
+            const E = this.params.E !== undefined ? this.params.E : 10;
+
+            // ローレンツ力、または電場加速の軌道追跡
+            if (this.trail.length === 0) {
+                this.particles = [{ x: 50, y: h/2, vx: 150, vy: -50 }];
+            }
+
+            let p = this.particles[0];
+            // 物理力学計算
+            let fx = q * E * 2; 
+            let fy = q * p.vx * B * 0.1; // ローレンツ力成分
+            
+            p.vx += (fx / m) * 0.016; p.vy += (fy / m) * 0.016;
+            p.x += p.vx * 0.016; p.y += p.vy * 0.016;
+            this.trail.push({x: p.x, y: p.y});
+
+            if (p.x > w || p.y < 0 || p.y > h) this.trail = []; // 画面外でリセット
+
+            // 軌跡描画
+            ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)'; ctx.lineWidth = 2; ctx.beginPath();
+            this.trail.forEach((pt, i) => { if(i===0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+            ctx.stroke();
+
+            // 粒子描画
+            ctx.fillStyle = q >= 0 ? '#ef4444' : '#3b82f6';
+            ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, Math.PI*2); ctx.fill();
+            
+            this.drawArrow(ctx, p.x, p.y, p.x + p.vx*0.2, p.y + p.vy*0.2, '#38bdf8', 2); // 速度ベクトル
+            this.drawArrow(ctx, p.x, p.y, p.x + fx*0.5, p.y + fy*0.5, '#f43f5e', 2); // 電磁気力ベクトル
+        }
+
+        // ----------------------------------------------------
+        // 分野⑤：原子物理の万能レンダリング（ミクロ・確率世界）
+        // ----------------------------------------------------
+        else if (f.category === "原子") {
+            if (f.name.includes("半減期")) {
+                // 半減期：粒子がランダムに崩壊する様子をリアルタイムシミュレート
+                this.particles.forEach(p => {
+                    ctx.fillStyle = p.alive ? '#f59e0b' : '#475569';
+                    ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill();
+                });
+            } else {
+                // ボアの原子模型モデル
+                const cx = w/2; const cy = h/2;
+                ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI*2); ctx.fill(); // 原子核(+)
+                ctx.fillStyle = '#fff'; ctx.font = '12px sans-serif'; ctx.fillText('+', cx-4, cy+4);
+
+                const r = 80 + Math.sin(this.simTime) * 10; // 定常波のゆらぎ表現
+                const ex = cx + r * Math.cos(this.simTime * 3); const ey = cy + r * Math.sin(this.simTime * 3);
+                
+                // 電子軌道
+                ctx.strokeStyle = '#334155'; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+                // 回る電子
+                ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.arc(ex, ey, 7, 0, Math.PI*2); ctx.fill();
+                this.drawArrow(ctx, ex, ey, ex - Math.sin(this.simTime*3)*40, ey + Math.cos(this.simTime*3)*40, '#38bdf8', 2); // 電子速度
+            }
+        }
     }
 
     animate() {
         requestAnimationFrame(this.animate);
-        if (!this.activeUnit) return;
-
+        if (!this.activeFormula) return;
         if (!this.isPaused) {
-            this.activeUnit.step(0.01666 * this.timeScale);
+            this.step(0.01666 * this.timeScale);
         }
-
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        this.ctx.strokeStyle = '#1e293b';
-        this.ctx.lineWidth = 1;
-        for (let x = 0; x < this.canvas.width; x += 40) {
-            this.ctx.beginPath(); this.ctx.moveTo(x, 0); this.ctx.lineTo(x, this.canvas.height); this.ctx.stroke();
-        }
-        for (let y = 0; y < this.canvas.height; y += 40) {
-            this.ctx.beginPath(); this.ctx.moveTo(0, y); this.ctx.lineTo(this.canvas.width, y); this.ctx.stroke();
-        }
-
-        this.activeUnit.draw(this.ctx, this);
+        this.draw();
     }
 }
 
 // ============================================================================
-// 3. 2Dシミュレーション 各単元クラス
+// 4. アプリケーションのエントリーポイント
 // ============================================================================
-class Base2DUnit {
-    constructor() {
-        this.simTime = 0; this.width = 800; this.height = 500; this.trail = [];
-    }
-    onResize(w, h) { this.width = w; this.height = h; }
-    updateParameter(id, value) { this[id] = value; this.reset(); }
-    step(dt) { this.simTime += dt; }
-    reset() { this.simTime = 0; this.trail = []; }
-    draw(ctx, engine) {}
-}
-
-// --- [1] 斜方投射 (力学) ---
-class ProjectileUnit extends Base2DUnit {
-    static unitName = "1. 斜方投射の成分分解 (力学)";
-    static linkedFormula = "x = v₀ cosθ·t  /  y = v₀ sinθ·t - (1/2)gt²";
-    constructor() {
-        super(); this.v0 = 18.0; this.theta = 45.0; this.g = 9.8; this.x = 0; this.y = 0;
-    }
-    getParameters() {
-        return [
-            { id: 'v0', name: '初速度', symbol: 'v₀', min: 10, max: 25, step: 1, value: this.v0, unit: 'm/s' },
-            { id: 'theta', name: '投射角', symbol: 'θ', min: 15, max: 80, step: 5, value: this.theta, unit: '度' }
-        ];
-    }
-    step(dt) {
-        super.step(dt);
-        const rad = (this.theta * Math.PI) / 180;
-        this.x = this.v0 * Math.cos(rad) * this.simTime;
-        this.y = this.v0 * Math.sin(rad) * this.simTime - 0.5 * this.g * this.simTime * this.simTime;
-        
-        if (this.y < 0) { this.y = 0; }
-        else if (this.simTime > 0) { this.trail.push({x: this.x, y: this.y}); }
-    }
-    draw(ctx, engine) {
-        const scale = 20; 
-        const startX = 50; const startY = this.height - 50;
-
-        ctx.strokeStyle = '#475569'; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(0, startY); ctx.lineTo(this.width, startY); ctx.stroke();
-
-        ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
-        ctx.beginPath();
-        this.trail.forEach((p, idx) => {
-            const tx = startX + p.x * scale; const ty = startY - p.y * scale;
-            if(idx === 0) ctx.moveTo(tx, ty); else ctx.lineTo(tx, ty);
-        });
-        ctx.stroke(); ctx.setLineDash([]);
-
-        const bx = startX + this.x * scale; const by = startY - this.y * scale;
-        ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(bx, by, 10, 0, Math.PI*2); ctx.fill();
-
-        if (this.y > 0 || this.simTime === 0) {
-            const rad = (this.theta * Math.PI) / 180;
-            const vx = this.v0 * Math.cos(rad);
-            const vy = this.v0 * Math.sin(rad) - this.g * this.simTime;
-            engine.drawArrow(ctx, bx, by, bx + vx * scale * 0.3, by - vy * scale * 0.3, '#38bdf8', 2.5);
-            engine.drawArrow(ctx, bx, by, bx, by + 40, '#f43f5e', 2.5);
-        }
-    }
-    getExplanation() { return "【見て学ぶポイント】\n水平方向には力が働かないため、横向きの速度ベクトル（青）はずっと同じ長さです。\n鉛直方向には常に一定の重力（赤）が下向きに働くため、縦向きの速度（青）はだんだん短くなり、最高点で0になった後、下向きに加速します。"; }
-}
-
-// --- [2] 単振動 (力学) ---
-class SHMUnit extends Base2DUnit {
-    static unitName = "2. ばね振り子の復元力 (力学)";
-    static linkedFormula = "F = -Kx   /   T = 2π√(m / K)";
-    constructor() {
-        super(); this.m = 2.0; this.k = 15.0; this.A = 5.0; this.y = 0;
-    }
-    getParameters() {
-        return [
-            { id: 'm', name: '質量', symbol: 'm', min: 0.5, max: 4.5, step: 0.5, value: this.m, unit: 'kg' },
-            { id: 'k', name: 'ばね定数', symbol: 'K', min: 5, max: 30, step: 1, value: this.k, unit: 'N/m' }
-        ];
-    }
-    step(dt) {
-        super.step(dt);
-        const omega = Math.sqrt(this.k / this.m);
-        this.y = this.A * Math.cos(omega * this.simTime);
-    }
-    draw(ctx, engine) {
-        const centerX = this.width / 2; const centerY = this.height / 2;
-        const scale = 25;
-        const ballY = centerY + this.y * scale;
-
-        ctx.strokeStyle = '#64748b'; ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.moveTo(centerX - 50, 40); ctx.lineTo(centerX + 50, 40); ctx.stroke();
-
-        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.beginPath();
-        ctx.moveTo(centerX, 40);
-        const turns = 15;
-        const dist = (ballY - 40) / turns;
-        for(let i=0; i<turns; i++) {
-            const y = 40 + (i + 0.5) * dist;
-            const x = centerX + (i % 2 === 0 ? 15 : -15);
-            ctx.lineTo(x, y);
-        }
-        ctx.lineTo(centerX, ballY); ctx.stroke();
-
-        ctx.strokeStyle = '#334155'; ctx.setLineDash([5, 5]);
-        ctx.beginPath(); ctx.moveTo(centerX - 80, centerY); ctx.lineTo(centerX + 80, centerY); ctx.stroke();
-        ctx.setLineDash([]);
-
-        ctx.fillStyle = '#a855f7'; ctx.beginPath(); ctx.arc(centerX, ballY, 14, 0, Math.PI*2); ctx.fill();
-
-        const omega = Math.sqrt(this.k / this.m);
-        const velY = -this.A * omega * Math.sin(omega * this.simTime);
-        const forceY = -this.k * this.y;
-
-        if (Math.abs(velY) > 0.1) engine.drawArrow(ctx, centerX + 25, ballY, centerX + 25, ballY + velY * scale * 0.2, '#38bdf8', 2.5);
-        if (Math.abs(forceY) > 0.1) engine.drawArrow(ctx, centerX - 25, ballY, centerX - 25, ballY - forceY * scale * 0.2, '#f43f5e', 2.5);
-    }
-    getExplanation() { return "【見て学ぶポイント】\n復元力（赤矢印）に注目。おもりが中心（点線）から離れるほど力は大きくなり、常に中心へ引き戻す向きに働きます。\n中心を通過するとき力（赤）はゼロになりますが、速度（青）が最大になるため、行き過ぎて次の振動へ向かいます。"; }
-}
-
-// --- [3] ローレンツ力 (電磁気) ---
-class LorentzForceUnit extends Base2DUnit {
-    static unitName = "3. 磁場中の円運動 (電磁気)";
-    static linkedFormula = "F = qvB   /   r = mv / qB";
-    constructor() {
-        super(); this.q = 1.0; this.B = 1.5; this.v0 = 12.0; this.m = 1.0;
-        this.px = 0; this.py = 0; this.vx = 0; this.vy = 0;
-    }
-    getParameters() {
-        return [
-            { id: 'q', name: '電荷の正負', symbol: 'q', min: -1.0, max: 1.0, step: 2.0, value: this.q, unit: 'C (陽子 1/ 電子 -1)' },
-            { id: 'B', name: '磁束密度', symbol: 'B', min: 0.5, max: 2.5, step: 0.5, value: this.B, unit: 'T' },
-            { id: 'v0', name: '粒子速さ', symbol: 'v₀', min: 8, max: 16, step: 1, value: this.v0, unit: 'm/s' }
-        ];
-    }
-    reset() {
-        super.reset();
-        this.px = 0; this.py = 0;
-        this.vx = 0; this.vy = -this.v0;
-    }
-    step(dt) {
-        super.step(dt);
-        const fx = this.q * this.vy * this.B;
-        const fy = -this.q * this.vx * this.B;
-        const ax = fx / this.m; const ay = fy / this.m;
-        this.vx += ax * dt; this.vy += ay * dt;
-        this.px += this.vx * dt; this.py += this.vy * dt;
-        this.trail.push({x: this.px, y: this.py});
-        if (this.trail.length > 400) this.trail.shift();
-    }
-    draw(ctx, engine) {
-        const cx = this.width / 2; const cy = this.height / 2;
-        const scale = 15;
-        ctx.fillStyle = '#1e293b'; ctx.font = '14px Arial';
-        for(let x=60; x<this.width; x+=100) {
-            for(let y=40; y<this.height; y+=100) ctx.fillText('⊙ B', x, y);
-        }
-        ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.beginPath();
-        this.trail.forEach((p, idx) => {
-            if(idx === 0) ctx.moveTo(cx + p.x * scale, cy - p.y * scale);
-            else ctx.lineTo(cx + p.x * scale, cy - p.y * scale);
-        });
-        ctx.stroke();
-        const bx = cx + this.px * scale; const by = cy - this.py * scale;
-        ctx.fillStyle = this.q > 0 ? '#ef4444' : '#3b82f6';
-        ctx.beginPath(); ctx.arc(bx, by, 8, 0, Math.PI*2); ctx.fill();
-        engine.drawArrow(ctx, bx, by, bx + this.vx * scale * 0.4, by - this.vy * scale * 0.4, '#38bdf8', 2.5);
-        const fx = this.q * this.vy * this.B; const fy = -this.q * this.vx * this.B;
-        engine.drawArrow(ctx, bx, by, bx + fx * scale * 0.4, by - fy * scale * 0.4, '#f43f5e', 2.5);
-    }
-    getExplanation() { return "【見て学ぶポイント】\n力（赤）と速度（青）の関係を見てください。力は常に速度と直角（円の中心向き）に働くため、速さを変えずに曲げるだけの「向心力」となり、等速円運動になります。\n電荷を負（-1）にすると、力の向きが反転し、逆回りになります。"; }
-}
-
-// --- [4] 万有引力 (力学) ---
-class GravityOrbitUnit extends Base2DUnit {
-    static unitName = "4. 惑星軌道と面積速度 (力学)";
-    static linkedFormula = "F = G(Mm / r²)   /   v = √(GM / r)";
-    constructor() {
-        super(); this.M = 1200.0; this.v0 = 11.0; this.px = 11.0; this.py = 0; this.vx = 0; this.vy = 0;
-    }
-    getParameters() {
-        return [
-            { id: 'M', name: '中心星の質量', symbol: 'M', min: 600, max: 1800, step: 100, value: this.M, unit: 'kg' },
-            { id: 'v0', name: '惑星の初速度', symbol: 'v₀', min: 7.0, max: 15.0, step: 0.5, value: this.v0, unit: 'm/s' }
-        ];
-    }
-    reset() {
-        super.reset();
-        this.px = 11.0; this.py = 0;
-        this.vx = 0; this.vy = this.v0;
-    }
-    step(dt) {
-        super.step(dt);
-        const r2 = this.px*this.px + this.py*this.py;
-        const r = Math.sqrt(r2);
-        if (r < 1.0) return;
-        const accScalar = (1.0 * this.M) / r2;
-        const ax = -accScalar * (this.px / r);
-        const ay = -accScalar * (this.py / r);
-        this.vx += ax * dt; this.vy += ay * dt;
-        this.px += this.vx * dt; this.py += this.vy * dt;
-        this.trail.push({x: this.px, y: this.py});
-        if(this.trail.length > 600) this.trail.shift();
-    }
-    draw(ctx, engine) {
-        const cx = this.width / 2; const cy = this.height / 2;
-        const scale = 18;
-        ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)'; ctx.lineWidth = 1.5; ctx.beginPath();
-        this.trail.forEach((p, idx) => {
-            if(idx === 0) ctx.moveTo(cx + p.x * scale, cy - p.y * scale);
-            else ctx.lineTo(cx + p.x * scale, cy - p.y * scale);
-        });
-        ctx.stroke();
-        ctx.fillStyle = '#fab005'; ctx.beginPath(); ctx.arc(cx, cy, 18, 0, Math.PI*2); ctx.fill();
-        const bx = cx + this.px * scale; const by = cy - this.py * scale;
-        ctx.fillStyle = '#10b981'; ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI*2); ctx.fill();
-        engine.drawArrow(ctx, bx, by, bx + this.vx * scale * 0.4, by - this.vy * scale * 0.4, '#38bdf8', 2.5);
-        const r = Math.sqrt(this.px*this.px + this.py*this.py);
-        const fScalar = 150 / (r*r);
-        engine.drawArrow(ctx, bx, by, bx - (this.px/r) * fScalar * scale, by + (this.py/r) * fScalar * scale, '#f43f5e', 2.5);
-    }
-    getExplanation() { return "【見て学ぶポイント】\nケプラーの第二法則（面積速度一定）の可視化です。\n惑星が中心星に近づくほど引力（赤）が強くなり、それによって速度（青）が跳ね上がって、鋭くコーナーを駆け抜けます。離れるとゆっくり動きます。"; }
-}
-
-// --- [5] クーロン散乱 (原子物理) ---
-class CoulombScatteringUnit extends Base2DUnit {
-    static unitName = "5. α粒子散乱実験 (原子物理)";
-    static linkedFormula = "F = k (q₁q₂ / r²)";
-    constructor() {
-        super(); this.q2 = 1.0; this.b = 1.5; this.v0 = 10.0;
-        this.px = 0; this.py = 0; this.vx = 0; this.vy = 0;
-    }
-    getParameters() {
-        return [
-            { id: 'q2', name: '入射粒子の電荷', symbol: 'q₂', min: -1.0, max: 1.0, step: 2.0, value: this.q2, unit: '(正 1/ 負 -1)' },
-            { id: 'b', name: '衝突径数 (ズレ)', symbol: 'b', min: 0.2, max: 3.5, step: 0.3, value: this.b, unit: 'm' },
-            { id: 'v0', name: '入射速度', symbol: 'v₀', min: 7.0, max: 14.0, step: 1.0, value: this.v0, unit: 'm/s' }
-        ];
-    }
-    reset() {
-        super.reset();
-        this.px = -15.0; this.py = this.b;
-        this.vx = this.v0; this.vy = 0;
-    }
-    step(dt) {
-        super.step(dt);
-        const r2 = this.px*this.px + this.py*this.py;
-        const r = Math.sqrt(r2);
-        if (r < 0.6) return;
-        const k = 40.0;
-        const fScalar = (k * 4.0 * this.q2) / r2;
-        const ax = fScalar * (this.px / r);
-        const ay = fScalar * (this.py / r);
-        this.vx += ax * dt; this.vy += ay * dt;
-        this.px += this.vx * dt; this.py += this.vy * dt;
-        if (this.px < 20) this.trail.push({x: this.px, y: this.py});
-    }
-    draw(ctx, engine) {
-        const cx = this.width / 2; const cy = this.height / 2;
-        const scale = 20;
-        ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5; ctx.beginPath();
-        this.trail.forEach((p, idx) => {
-            if(idx === 0) ctx.moveTo(cx + p.x * scale, cy - p.y * scale);
-            else ctx.lineTo(cx + p.x * scale, cy - p.y * scale);
-        });
-        ctx.stroke();
-        ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(cx, cy, 12, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#fff'; ctx.font = 'bold 12px sans-serif'; ctx.fillText('+', cx-4, cy+4);
-        const bx = cx + this.px * scale; const by = cy - this.py * scale;
-        ctx.fillStyle = this.q2 > 0 ? '#f59e0b' : '#3b82f6';
-        ctx.beginPath(); ctx.arc(bx, by, 6, 0, Math.PI*2); ctx.fill();
-        engine.drawArrow(ctx, bx, by, bx + this.vx * scale * 0.3, by - this.vy * scale * 0.3, '#38bdf8', 2);
-        const r = Math.sqrt(this.px*this.px + this.py*this.py);
-        const k = 40.0; const fScalar = (k * 4.0 * this.q2) / (r*r);
-        const fx = fScalar * (this.px / r); const fy = fScalar * (this.py / r);
-        if(r < 10) engine.drawArrow(ctx, bx, by, bx + fx * scale * 0.3, by - fy * scale * 0.3, '#f43f5e', 2);
-    }
-    getExplanation() { return "【見て学ぶポイント】\n電荷が正（黄）の時は斥力が働き、原子核（赤）に近づくにつれて凄まじい力（赤矢印）で軌道を曲げられます。上下のズレ b を小さくするほど近くを通るため、曲がり方が急になります。"; }
-}
-
-// ============================================================================
-// 4. エントリーポイント（アプリケーション起動）
-// ============================================================================
-const physicsApp = new PhysicsEngine();
-physicsApp.registerUnit('projectile', ProjectileUnit);
-physicsApp.registerUnit('shm', SHMUnit);
-physicsApp.registerUnit('lorentz', LorentzForceUnit);
-physicsApp.registerUnit('gravity', GravityOrbitUnit);
-physicsApp.registerUnit('coulomb', CoulombScatteringUnit);
+const physicsApp = new UniversalEngine();
 const uiController = new UIController();
+
+// 起動時は公式暗記モードからスタート
 uiController.switchMode('flashcard');
