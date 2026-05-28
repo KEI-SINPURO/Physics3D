@@ -90,49 +90,32 @@ class UIController {
 }
 
 // ============================================================================
-// 2. 物理シミュレーション共通 3Dコアエンジンクラス
+// 2. 2D 物理シミュレーション コアエンジンクラス
 // ============================================================================
 class PhysicsEngine {
     constructor() {
-        this.container = document.getElementById('canvas-container');
+        this.canvas = document.getElementById('physics-canvas');
+        this.ctx = this.canvas.getContext('2d');
         this.placeholder = document.getElementById('canvas-placeholder');
         this.panel = document.getElementById('panel-container');
         this.titleElement = document.getElementById('unit-title');
         
-        this.scene = null; this.camera = null; this.renderer = null; this.controls = null;
-        this.activeUnit = null; this.isPaused = false; this.timeScale = 1.0;
-        this.initialCameraPos = new THREE.Vector3(0, 5, 15);
+        this.activeUnit = null;
+        this.isPaused = false;
+        this.timeScale = 1.0;
         this.units = {};
 
-        this.initThree();
         this.animate = this.animate.bind(this);
         requestAnimationFrame(this.animate);
-        window.addEventListener('resize', () => this.onWindowResize());
+        window.addEventListener('resize', () => this.resizeCanvas());
     }
 
-    initThree() {
-        this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x0f172a); 
-
-        this.camera = new THREE.PerspectiveCamera(45, this.container.clientWidth / this.container.clientHeight, 0.1, 1000);
-        this.camera.position.copy(this.initialCameraPos);
-
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
-        this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-        this.renderer.shadowMap.enabled = true;
-        this.container.appendChild(this.renderer.domElement);
-
-        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
-        this.controls.enableDamping = true;
-        this.controls.dampingFactor = 0.05;
-
-        this.scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight.position.set(10, 20, 10);
-        dirLight.castShadow = true;
-        this.scene.add(dirLight);
-        
-        this.scene.add(new THREE.GridHelper(40, 40, 0x475569, 0x334155));
+    resizeCanvas() {
+        if (!this.canvas.parentElement) return;
+        const rect = this.canvas.parentElement.getBoundingClientRect();
+        this.canvas.width = rect.width;
+        this.canvas.height = rect.height;
+        if (this.activeUnit) this.activeUnit.onResize(this.canvas.width, this.canvas.height);
     }
 
     registerUnit(id, unitClass) {
@@ -157,21 +140,15 @@ class PhysicsEngine {
         const activeItem = document.querySelector(`[data-id="${id}"]`);
         if (activeItem) activeItem.classList.add('active');
 
-        if (this.activeUnit) this.activeUnit.destroy(this.scene);
-
         this.placeholder.style.display = 'none';
         this.panel.style.visibility = 'visible';
         
         const UnitClass = this.units[id];
         this.activeUnit = new UnitClass();
         this.titleElement.textContent = UnitClass.unitName;
-        
         document.getElementById('current-sim-formula').textContent = UnitClass.linkedFormula;
         
-        this.camera.position.copy(this.initialCameraPos);
-        this.controls.target.set(0, 0, 0);
-        
-        this.activeUnit.init(this.scene);
+        this.resizeCanvas();
         this.buildControls();
         this.renderExplanation();
         this.resetSimulation();
@@ -206,324 +183,347 @@ class PhysicsEngine {
         document.getElementById('btn-play-pause').textContent = this.isPaused ? '再 生' : '一時停止';
     }
 
-    resetSimulation() { if (this.activeUnit) this.activeUnit.reset(); }
+    resetSimulation() { 
+        if (this.activeUnit) this.activeUnit.reset(); 
+    }
     
     changeSpeed(val) { 
         this.timeScale = parseFloat(val); 
-        document.getElementById('txt-speed').textContent = `${this.timeScale.toFixed(2)}x`; 
-    }
-    
-    changeZoom(val) {
-        const zoom = parseFloat(val); 
-        document.getElementById('txt-zoom').textContent = `${zoom.toFixed(1)}x`;
-        const dir = new THREE.Vector3().subVectors(this.camera.position, this.controls.target).normalize();
-        this.camera.position.copy(dir.multiplyScalar(20 / zoom).add(this.controls.target));
+        document.getElementById('txt-speed').textContent = `${this.timeScale.toFixed(1)}x`; 
     }
 
-    onWindowResize() { 
-        this.camera.aspect = this.container.clientWidth / this.container.clientHeight; 
-        this.camera.updateProjectionMatrix(); 
-        this.renderer.setSize(this.container.clientWidth, this.container.clientHeight); 
+    drawArrow(ctx, fromX, fromY, toX, toY, color, width = 2) {
+        const headLength = 10; 
+        const dx = toX - fromX;
+        const dy = toY - fromY;
+        const angle = Math.atan2(dy, dx);
+        
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = width;
+        
+        ctx.beginPath();
+        ctx.moveTo(fromX, fromY);
+        ctx.lineTo(toX, toY);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(toX, toY);
+        ctx.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), toY - headLength * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6), toY - headLength * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fill();
     }
 
     animate() {
-        requestAnimationFrame(this.animate); 
-        this.controls.update();
-        // 60FPS固定ステップで計算
-        if (this.activeUnit && !this.isPaused) {
+        requestAnimationFrame(this.animate);
+        if (!this.activeUnit) return;
+
+        if (!this.isPaused) {
             this.activeUnit.step(0.01666 * this.timeScale);
         }
-        this.renderer.render(this.scene, this.camera);
+
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        this.ctx.strokeStyle = '#1e293b';
+        this.ctx.lineWidth = 1;
+        for (let x = 0; x < this.canvas.width; x += 40) {
+            this.ctx.beginPath(); this.ctx.moveTo(x, 0); this.ctx.lineTo(x, this.canvas.height); this.ctx.stroke();
+        }
+        for (let y = 0; y < this.canvas.height; y += 40) {
+            this.ctx.beginPath(); this.ctx.moveTo(0, y); this.ctx.lineTo(this.canvas.width, y); this.ctx.stroke();
+        }
+
+        this.activeUnit.draw(this.ctx, this);
     }
 }
 
 // ============================================================================
-// 3. 各実験単元の基礎クラス
+// 3. 2Dシミュレーション 各単元クラス
 // ============================================================================
-class BaseUnit {
-    constructor() { this.meshGroup = new THREE.Group(); this.simTime = 0; }
-    init(scene) { scene.add(this.meshGroup); }
+class Base2DUnit {
+    constructor() {
+        this.simTime = 0; this.width = 800; this.height = 500; this.trail = [];
+    }
+    onResize(w, h) { this.width = w; this.height = h; }
     updateParameter(id, value) { this[id] = value; this.reset(); }
     step(dt) { this.simTime += dt; }
-    reset() { this.simTime = 0; }
-    destroy(scene) {
-        scene.remove(this.meshGroup);
-        this.meshGroup.traverse(c => { 
-            if (c.geometry) c.geometry.dispose(); 
-            if (c.material) c.material.dispose(); 
-        });
-    }
+    reset() { this.simTime = 0; this.trail = []; }
+    draw(ctx, engine) {}
 }
 
-// ============================================================================
-// 4. 高度な物理シミュレーション群（全5種）
-// ============================================================================
-
-// [1] 放物運動 (力学)
-class ProjectileUnit extends BaseUnit {
-    static unitName = "1. 斜方投射の軌道 (力学)";
-    static linkedFormula = "x = v₀cosθ·t  /  y = v₀sinθ·t - (1/2)gt²";
-    constructor() { super(); this.v0 = 15.0; this.theta = 45.0; this.g = 9.8; this.ball = null; }
+// --- [1] 斜方投射 (力学) ---
+class ProjectileUnit extends Base2DUnit {
+    static unitName = "1. 斜方投射の成分分解 (力学)";
+    static linkedFormula = "x = v₀ cosθ·t  /  y = v₀ sinθ·t - (1/2)gt²";
+    constructor() {
+        super(); this.v0 = 18.0; this.theta = 45.0; this.g = 9.8; this.x = 0; this.y = 0;
+    }
     getParameters() {
         return [
-            { id: 'v0', name: '初速度', symbol: 'v₀', min: 5, max: 25, step: 0.5, value: this.v0, unit: 'm/s' },
-            { id: 'theta', name: '投射角', symbol: 'θ', min: 15, max: 85, step: 1, value: this.theta, unit: 'deg' }
+            { id: 'v0', name: '初速度', symbol: 'v₀', min: 10, max: 25, step: 1, value: this.v0, unit: 'm/s' },
+            { id: 'theta', name: '投射角', symbol: 'θ', min: 15, max: 80, step: 5, value: this.theta, unit: '度' }
         ];
-    }
-    init(scene) {
-        super.init(scene);
-        this.ball = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), new THREE.MeshStandardMaterial({ color: 0x38bdf8 }));
-        this.meshGroup.add(this.ball);
     }
     step(dt) {
         super.step(dt);
         const rad = (this.theta * Math.PI) / 180;
-        const x = this.v0 * Math.cos(rad) * this.simTime - 10; // 中央に寄せるためのオフセット
-        const y = this.v0 * Math.sin(rad) * this.simTime - 0.5 * this.g * this.simTime * this.simTime;
-        if (y >= 0) this.ball.position.set(x, y, 0); 
+        this.x = this.v0 * Math.cos(rad) * this.simTime;
+        this.y = this.v0 * Math.sin(rad) * this.simTime - 0.5 * this.g * this.simTime * this.simTime;
+        
+        if (this.y < 0) { this.y = 0; }
+        else if (this.simTime > 0) { this.trail.push({x: this.x, y: this.y}); }
     }
-    getExplanation() { return "重力下における物体の放物運動です。x方向は等速直線運動、y方向は等加速度直線運動を行います。"; }
-    reset() { super.reset(); if (this.ball) this.ball.position.set(-10, 0, 0); }
+    draw(ctx, engine) {
+        const scale = 20; 
+        const startX = 50; const startY = this.height - 50;
+
+        ctx.strokeStyle = '#475569'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(0, startY); ctx.lineTo(this.width, startY); ctx.stroke();
+
+        ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        this.trail.forEach((p, idx) => {
+            const tx = startX + p.x * scale; const ty = startY - p.y * scale;
+            if(idx === 0) ctx.moveTo(tx, ty); else ctx.lineTo(tx, ty);
+        });
+        ctx.stroke(); ctx.setLineDash([]);
+
+        const bx = startX + this.x * scale; const by = startY - this.y * scale;
+        ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(bx, by, 10, 0, Math.PI*2); ctx.fill();
+
+        if (this.y > 0 || this.simTime === 0) {
+            const rad = (this.theta * Math.PI) / 180;
+            const vx = this.v0 * Math.cos(rad);
+            const vy = this.v0 * Math.sin(rad) - this.g * this.simTime;
+            engine.drawArrow(ctx, bx, by, bx + vx * scale * 0.3, by - vy * scale * 0.3, '#38bdf8', 2.5);
+            engine.drawArrow(ctx, bx, by, bx, by + 40, '#f43f5e', 2.5);
+        }
+    }
+    getExplanation() { return "【見て学ぶポイント】\n水平方向には力が働かないため、横向きの速度ベクトル（青）はずっと同じ長さです。\n鉛直方向には常に一定の重力（赤）が下向きに働くため、縦向きの速度（青）はだんだん短くなり、最高点で0になった後、下向きに加速します。"; }
 }
 
-// [2] 単振動 (力学)
-class SHMUnit extends BaseUnit {
-    static unitName = "2. ばね振り子と単振動 (力学)";
-    static linkedFormula = "T = 2π√(m/K)  /  F = -Kx";
-    constructor() { super(); this.m = 2.0; this.k = 20.0; this.A = 5.0; this.ball = null; }
+// --- [2] 単振動 (力学) ---
+class SHMUnit extends Base2DUnit {
+    static unitName = "2. ばね振り子の復元力 (力学)";
+    static linkedFormula = "F = -Kx   /   T = 2π√(m / K)";
+    constructor() {
+        super(); this.m = 2.0; this.k = 15.0; this.A = 5.0; this.y = 0;
+    }
     getParameters() {
         return [
-            { id: 'm', name: '質量', symbol: 'm', min: 0.5, max: 5.0, step: 0.1, value: this.m, unit: 'kg' },
-            { id: 'k', name: 'ばね定数', symbol: 'K', min: 5, max: 50, step: 1, value: this.k, unit: 'N/m' }
+            { id: 'm', name: '質量', symbol: 'm', min: 0.5, max: 4.5, step: 0.5, value: this.m, unit: 'kg' },
+            { id: 'k', name: 'ばね定数', symbol: 'K', min: 5, max: 30, step: 1, value: this.k, unit: 'N/m' }
         ];
-    }
-    init(scene) {
-        super.init(scene);
-        this.ball = new THREE.Mesh(new THREE.SphereGeometry(0.6, 32, 32), new THREE.MeshStandardMaterial({ color: 0xa855f7 }));
-        this.meshGroup.add(this.ball);
     }
     step(dt) {
         super.step(dt);
         const omega = Math.sqrt(this.k / this.m);
-        const y = this.A * Math.cos(omega * this.simTime);
-        this.ball.position.set(0, y, 0);
+        this.y = this.A * Math.cos(omega * this.simTime);
     }
-    getExplanation() { return "フックの法則に基づく単振動です。質量 m が大きいほど周期は長くなり、ばね定数 K が大きいほど周期は短くなります（速く振動します）。"; }
-    reset() { super.reset(); if (this.ball) this.ball.position.set(0, this.A, 0); }
+    draw(ctx, engine) {
+        const centerX = this.width / 2; const centerY = this.height / 2;
+        const scale = 25;
+        const ballY = centerY + this.y * scale;
+
+        ctx.strokeStyle = '#64748b'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(centerX - 50, 40); ctx.lineTo(centerX + 50, 40); ctx.stroke();
+
+        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.beginPath();
+        ctx.moveTo(centerX, 40);
+        const turns = 15;
+        const dist = (ballY - 40) / turns;
+        for(let i=0; i<turns; i++) {
+            const y = 40 + (i + 0.5) * dist;
+            const x = centerX + (i % 2 === 0 ? 15 : -15);
+            ctx.lineTo(x, y);
+        }
+        ctx.lineTo(centerX, ballY); ctx.stroke();
+
+        ctx.strokeStyle = '#334155'; ctx.setLineDash([5, 5]);
+        ctx.beginPath(); ctx.moveTo(centerX - 80, centerY); ctx.lineTo(centerX + 80, centerY); ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = '#a855f7'; ctx.beginPath(); ctx.arc(centerX, ballY, 14, 0, Math.PI*2); ctx.fill();
+
+        const omega = Math.sqrt(this.k / this.m);
+        const velY = -this.A * omega * Math.sin(omega * this.simTime);
+        const forceY = -this.k * this.y;
+
+        if (Math.abs(velY) > 0.1) engine.drawArrow(ctx, centerX + 25, ballY, centerX + 25, ballY + velY * scale * 0.2, '#38bdf8', 2.5);
+        if (Math.abs(forceY) > 0.1) engine.drawArrow(ctx, centerX - 25, ballY, centerX - 25, ballY - forceY * scale * 0.2, '#f43f5e', 2.5);
+    }
+    getExplanation() { return "【見て学ぶポイント】\n復元力（赤矢印）に注目。おもりが中心（点線）から離れるほど力は大きくなり、常に中心へ引き戻す向きに働きます。\n中心を通過するとき力（赤）はゼロになりますが、速度（青）が最大になるため、行き過ぎて次の振動へ向かいます。"; }
 }
 
-// [3] ローレンツ力 (電磁気)
-class LorentzForceUnit extends BaseUnit {
-    static unitName = "3. 磁場中のらせん運動 (電磁気)";
-    static linkedFormula = "F = q(v × B)  /  r = mv / |q|B";
+// --- [3] ローレンツ力 (電磁気) ---
+class LorentzForceUnit extends Base2DUnit {
+    static unitName = "3. 磁場中の円運動 (電磁気)";
+    static linkedFormula = "F = qvB   /   r = mv / qB";
     constructor() {
-        super();
-        this.m = 1.0; this.q = 1.0; this.v0 = 10.0; this.theta = 45; this.B = 2.0;
-        this.pos = new THREE.Vector3(0, -5, 0); this.vel = new THREE.Vector3(0, 0, 0);
-        this.trailPoints = []; this.maxTrail = 800;
+        super(); this.q = 1.0; this.B = 1.5; this.v0 = 12.0; this.m = 1.0;
+        this.px = 0; this.py = 0; this.vx = 0; this.vy = 0;
     }
     getParameters() {
         return [
-            { id: 'q', name: '電荷(＋/－)', symbol: 'q', min: -3.0, max: 3.0, step: 0.5, value: this.q, unit: 'C' },
-            { id: 'B', name: '磁束密度(上向)', symbol: 'B', min: 0.5, max: 5.0, step: 0.5, value: this.B, unit: 'T' },
-            { id: 'v0', name: '初速度', symbol: 'v₀', min: 5.0, max: 20.0, step: 1.0, value: this.v0, unit: 'm/s' },
-            { id: 'theta', name: '入射角', symbol: 'θ', min: 0, max: 90, step: 5, value: this.theta, unit: 'deg' }
+            { id: 'q', name: '電荷の正負', symbol: 'q', min: -1.0, max: 1.0, step: 2.0, value: this.q, unit: 'C (陽子 1/ 電子 -1)' },
+            { id: 'B', name: '磁束密度', symbol: 'B', min: 0.5, max: 2.5, step: 0.5, value: this.B, unit: 'T' },
+            { id: 'v0', name: '粒子速さ', symbol: 'v₀', min: 8, max: 16, step: 1, value: this.v0, unit: 'm/s' }
         ];
     }
-    init(scene) {
-        super.init(scene);
-        const arrowGroup = new THREE.Group();
-        for(let x=-8; x<=8; x+=4) {
-            for(let z=-8; z<=8; z+=4) {
-                const arrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(x,-8,z), 16, 0x3b82f6, 1, 0.5);
-                arrow.line.material.transparent = true; arrow.line.material.opacity = 0.2;
-                arrowGroup.add(arrow);
-            }
-        }
-        this.meshGroup.add(arrowGroup);
-
-        this.particle = new THREE.Mesh(new THREE.SphereGeometry(0.4, 32, 32), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
-        this.meshGroup.add(this.particle);
-
-        const trailGeom = new THREE.BufferGeometry();
-        this.trailPositions = new Float32Array(this.maxTrail * 3);
-        trailGeom.setAttribute('position', new THREE.BufferAttribute(this.trailPositions, 3));
-        this.trail = new THREE.Line(trailGeom, new THREE.LineBasicMaterial({ color: 0xf59e0b, linewidth: 2 }));
-        this.meshGroup.add(this.trail);
-        this.reset();
+    reset() {
+        super.reset();
+        this.px = 0; this.py = 0;
+        this.vx = 0; this.vy = -this.v0;
     }
     step(dt) {
         super.step(dt);
-        const B_vec = new THREE.Vector3(0, this.B, 0);
-        const force = new THREE.Vector3().crossVectors(this.vel, B_vec).multiplyScalar(this.q);
-        const acc = force.divideScalar(this.m);
-        this.vel.add(acc.multiplyScalar(dt));
-        this.pos.add(this.vel.clone().multiplyScalar(dt));
-        this.particle.position.copy(this.pos);
-
-        if (this.trailPoints.length < this.maxTrail) {
-            this.trailPoints.push(this.pos.clone());
-            const posAttr = this.trail.geometry.attributes.position;
-            posAttr.setXYZ(this.trailPoints.length - 1, this.pos.x, this.pos.y, this.pos.z);
-            posAttr.needsUpdate = true;
-            this.trail.geometry.setDrawRange(0, this.trailPoints.length);
+        const fx = this.q * this.vy * this.B;
+        const fy = -this.q * this.vx * this.B;
+        const ax = fx / this.m; const ay = fy / this.m;
+        this.vx += ax * dt; this.vy += ay * dt;
+        this.px += this.vx * dt; this.py += this.vy * dt;
+        this.trail.push({x: this.px, y: this.py});
+        if (this.trail.length > 400) this.trail.shift();
+    }
+    draw(ctx, engine) {
+        const cx = this.width / 2; const cy = this.height / 2;
+        const scale = 15;
+        ctx.fillStyle = '#1e293b'; ctx.font = '14px Arial';
+        for(let x=60; x<this.width; x+=100) {
+            for(let y=40; y<this.height; y+=100) ctx.fillText('⊙ B', x, y);
         }
+        ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.beginPath();
+        this.trail.forEach((p, idx) => {
+            if(idx === 0) ctx.moveTo(cx + p.x * scale, cy - p.y * scale);
+            else ctx.lineTo(cx + p.x * scale, cy - p.y * scale);
+        });
+        ctx.stroke();
+        const bx = cx + this.px * scale; const by = cy - this.py * scale;
+        ctx.fillStyle = this.q > 0 ? '#ef4444' : '#3b82f6';
+        ctx.beginPath(); ctx.arc(bx, by, 8, 0, Math.PI*2); ctx.fill();
+        engine.drawArrow(ctx, bx, by, bx + this.vx * scale * 0.4, by - this.vy * scale * 0.4, '#38bdf8', 2.5);
+        const fx = this.q * this.vy * this.B; const fy = -this.q * this.vx * this.B;
+        engine.drawArrow(ctx, bx, by, bx + fx * scale * 0.4, by - fy * scale * 0.4, '#f43f5e', 2.5);
     }
-    getExplanation() { return "フレミングの左手の法則によるローレンツ力のシミュレーションです。電荷が正なら反時計回り、負なら時計回りに回転しながら進みます。"; }
-    reset() {
-        super.reset();
-        if(this.particle) this.particle.material.color.setHex(this.q >= 0 ? 0xef4444 : 0x3b82f6);
-        this.pos.set(0, -8, 0);
-        const rad = (this.theta * Math.PI) / 180;
-        this.vel.set(this.v0 * Math.sin(rad), this.v0 * Math.cos(rad), 0);
-        this.trailPoints = [];
-        if (this.trail) this.trail.geometry.setDrawRange(0, 0);
-    }
+    getExplanation() { return "【見て学ぶポイント】\n力（赤）と速度（青）の関係を見てください。力は常に速度と直角（円の中心向き）に働くため、速さを変えずに曲げるだけの「向心力」となり、等速円運動になります。\n電荷を負（-1）にすると、力の向きが反転し、逆回りになります。"; }
 }
 
-// [4] 万有引力・惑星の軌道 (力学・宇宙)
-class GravityOrbitUnit extends BaseUnit {
-    static unitName = "4. 万有引力による惑星軌道 (力学)";
-    static linkedFormula = "F = G(Mm / r²)  /  v = √(GM/r)";
+// --- [4] 万有引力 (力学) ---
+class GravityOrbitUnit extends Base2DUnit {
+    static unitName = "4. 惑星軌道と面積速度 (力学)";
+    static linkedFormula = "F = G(Mm / r²)   /   v = √(GM / r)";
     constructor() {
-        super();
-        this.M = 1000.0; this.v0 = 10.0; this.G = 1.0; 
-        this.pos = new THREE.Vector3(10, 0, 0); this.vel = new THREE.Vector3(0, 0, -this.v0);
-        this.trailPoints = []; this.maxTrail = 1000;
+        super(); this.M = 1200.0; this.v0 = 11.0; this.px = 11.0; this.py = 0; this.vx = 0; this.vy = 0;
     }
     getParameters() {
         return [
-            { id: 'M', name: '中心星の質量', symbol: 'M', min: 500, max: 2000, step: 100, value: this.M, unit: 'kg' },
-            { id: 'v0', name: '惑星の初速度', symbol: 'v₀', min: 5.0, max: 15.0, step: 0.5, value: this.v0, unit: 'm/s' }
+            { id: 'M', name: '中心星の質量', symbol: 'M', min: 600, max: 1800, step: 100, value: this.M, unit: 'kg' },
+            { id: 'v0', name: '惑星の初速度', symbol: 'v₀', min: 7.0, max: 15.0, step: 0.5, value: this.v0, unit: 'm/s' }
         ];
     }
-    init(scene) {
-        super.init(scene);
-        this.sun = new THREE.Mesh(new THREE.SphereGeometry(1.5, 32, 32), new THREE.MeshStandardMaterial({ color: 0xfab005, emissive: 0xfab005, emissiveIntensity: 0.5 }));
-        this.meshGroup.add(this.sun);
-
-        this.planet = new THREE.Mesh(new THREE.SphereGeometry(0.4, 32, 32), new THREE.MeshStandardMaterial({ color: 0x10b981 }));
-        this.meshGroup.add(this.planet);
-
-        const trailGeom = new THREE.BufferGeometry();
-        this.trailPositions = new Float32Array(this.maxTrail * 3);
-        trailGeom.setAttribute('position', new THREE.BufferAttribute(this.trailPositions, 3));
-        this.trail = new THREE.Line(trailGeom, new THREE.LineBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.5 }));
-        this.meshGroup.add(this.trail);
-        this.reset();
+    reset() {
+        super.reset();
+        this.px = 11.0; this.py = 0;
+        this.vx = 0; this.vy = this.v0;
     }
     step(dt) {
         super.step(dt);
-        const r_vec = new THREE.Vector3().subVectors(this.sun.position, this.pos);
-        const r2 = r_vec.lengthSq();
-        if (r2 < 2.0) return; // 衝突防止
-        
-        // a = GM / r^2 (mは打ち消される)
-        const accScalar = (this.G * this.M) / r2;
-        const acc = r_vec.normalize().multiplyScalar(accScalar);
-        
-        this.vel.add(acc.multiplyScalar(dt));
-        this.pos.add(this.vel.clone().multiplyScalar(dt));
-        this.planet.position.copy(this.pos);
-
-        if (this.simTime % 0.05 < dt && this.trailPoints.length < this.maxTrail) {
-            this.trailPoints.push(this.pos.clone());
-            const posAttr = this.trail.geometry.attributes.position;
-            posAttr.setXYZ(this.trailPoints.length - 1, this.pos.x, this.pos.y, this.pos.z);
-            posAttr.needsUpdate = true;
-            this.trail.geometry.setDrawRange(0, this.trailPoints.length);
-        }
+        const r2 = this.px*this.px + this.py*this.py;
+        const r = Math.sqrt(r2);
+        if (r < 1.0) return;
+        const accScalar = (1.0 * this.M) / r2;
+        const ax = -accScalar * (this.px / r);
+        const ay = -accScalar * (this.py / r);
+        this.vx += ax * dt; this.vy += ay * dt;
+        this.px += this.vx * dt; this.py += this.vy * dt;
+        this.trail.push({x: this.px, y: this.py});
+        if(this.trail.length > 600) this.trail.shift();
     }
-    getExplanation() { return "中心の星（質量M）からの万有引力による軌道運動です。初速度と質量のバランスにより、円軌道、楕円軌道、双曲線軌道（飛び去る）へと変化します。"; }
-    reset() {
-        super.reset();
-        this.pos.set(10, 0, 0);
-        this.vel.set(0, 0, -this.v0);
-        this.trailPoints = [];
-        if (this.trail) this.trail.geometry.setDrawRange(0, 0);
+    draw(ctx, engine) {
+        const cx = this.width / 2; const cy = this.height / 2;
+        const scale = 18;
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)'; ctx.lineWidth = 1.5; ctx.beginPath();
+        this.trail.forEach((p, idx) => {
+            if(idx === 0) ctx.moveTo(cx + p.x * scale, cy - p.y * scale);
+            else ctx.lineTo(cx + p.x * scale, cy - p.y * scale);
+        });
+        ctx.stroke();
+        ctx.fillStyle = '#fab005'; ctx.beginPath(); ctx.arc(cx, cy, 18, 0, Math.PI*2); ctx.fill();
+        const bx = cx + this.px * scale; const by = cy - this.py * scale;
+        ctx.fillStyle = '#10b981'; ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI*2); ctx.fill();
+        engine.drawArrow(ctx, bx, by, bx + this.vx * scale * 0.4, by - this.vy * scale * 0.4, '#38bdf8', 2.5);
+        const r = Math.sqrt(this.px*this.px + this.py*this.py);
+        const fScalar = 150 / (r*r);
+        engine.drawArrow(ctx, bx, by, bx - (this.px/r) * fScalar * scale, by + (this.py/r) * fScalar * scale, '#f43f5e', 2.5);
     }
+    getExplanation() { return "【見て学ぶポイント】\nケプラーの第二法則（面積速度一定）の可視化です。\n惑星が中心星に近づくほど引力（赤）が強くなり、それによって速度（青）が跳ね上がって、鋭くコーナーを駆け抜けます。離れるとゆっくり動きます。"; }
 }
 
-// [5] クーロン力・ラザフォード散乱 (原子/電磁気)
-class CoulombScatteringUnit extends BaseUnit {
-    static unitName = "5. クーロン力とラザフォード散乱 (原子)";
-    static linkedFormula = "F = k(q₁q₂ / r²)";
+// --- [5] クーロン散乱 (原子物理) ---
+class CoulombScatteringUnit extends Base2DUnit {
+    static unitName = "5. α粒子散乱実験 (原子物理)";
+    static linkedFormula = "F = k (q₁q₂ / r²)";
     constructor() {
-        super();
-        this.q1 = 5.0; // 中心原子核の電荷 (固定)
-        this.q2 = 1.0; // 入射粒子の電荷
-        this.v0 = 8.0; this.b = 2.0; // 衝突径数(y軸ズレ)
-        this.k = 50.0; // クーロン定数スケール
-        this.pos = new THREE.Vector3(-15, this.b, 0);
-        this.vel = new THREE.Vector3(this.v0, 0, 0);
-        this.trailPoints = []; this.maxTrail = 500;
+        super(); this.q2 = 1.0; this.b = 1.5; this.v0 = 10.0;
+        this.px = 0; this.py = 0; this.vx = 0; this.vy = 0;
     }
     getParameters() {
         return [
-            { id: 'q2', name: '入射粒子の電荷(＋/－)', symbol: 'q₂', min: -3.0, max: 3.0, step: 0.5, value: this.q2, unit: 'C' },
-            { id: 'b', name: '衝突径数(ズレ)', symbol: 'b', min: 0.0, max: 5.0, step: 0.5, value: this.b, unit: 'm' },
-            { id: 'v0', name: '入射速度', symbol: 'v₀', min: 5.0, max: 15.0, step: 1.0, value: this.v0, unit: 'm/s' }
+            { id: 'q2', name: '入射粒子の電荷', symbol: 'q₂', min: -1.0, max: 1.0, step: 2.0, value: this.q2, unit: '(正 1/ 負 -1)' },
+            { id: 'b', name: '衝突径数 (ズレ)', symbol: 'b', min: 0.2, max: 3.5, step: 0.3, value: this.b, unit: 'm' },
+            { id: 'v0', name: '入射速度', symbol: 'v₀', min: 7.0, max: 14.0, step: 1.0, value: this.v0, unit: 'm/s' }
         ];
     }
-    init(scene) {
-        super.init(scene);
-        this.nucleus = new THREE.Mesh(new THREE.SphereGeometry(1.0, 32, 32), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
-        this.meshGroup.add(this.nucleus);
-
-        this.particle = new THREE.Mesh(new THREE.SphereGeometry(0.3, 32, 32), new THREE.MeshStandardMaterial({ color: 0x3b82f6 }));
-        this.meshGroup.add(this.particle);
-
-        const trailGeom = new THREE.BufferGeometry();
-        this.trailPositions = new Float32Array(this.maxTrail * 3);
-        trailGeom.setAttribute('position', new THREE.BufferAttribute(this.trailPositions, 3));
-        this.trail = new THREE.Line(trailGeom, new THREE.LineBasicMaterial({ color: 0x94a3b8 }));
-        this.meshGroup.add(this.trail);
-        this.reset();
+    reset() {
+        super.reset();
+        this.px = -15.0; this.py = this.b;
+        this.vx = this.v0; this.vy = 0;
     }
     step(dt) {
         super.step(dt);
-        const r_vec = new THREE.Vector3().subVectors(this.pos, this.nucleus.position);
-        const r2 = r_vec.lengthSq();
-        if (r2 < 1.2) return; 
-
-        // F = k * q1 * q2 / r^2 (斥力なら正、引力なら負)
-        const forceScalar = (this.k * this.q1 * this.q2) / r2;
-        const acc = r_vec.normalize().multiplyScalar(forceScalar); 
-        
-        this.vel.add(acc.multiplyScalar(dt));
-        this.pos.add(this.vel.clone().multiplyScalar(dt));
-        this.particle.position.copy(this.pos);
-
-        if (this.simTime % 0.05 < dt && this.trailPoints.length < this.maxTrail) {
-            this.trailPoints.push(this.pos.clone());
-            const posAttr = this.trail.geometry.attributes.position;
-            posAttr.setXYZ(this.trailPoints.length - 1, this.pos.x, this.pos.y, this.pos.z);
-            posAttr.needsUpdate = true;
-            this.trail.geometry.setDrawRange(0, this.trailPoints.length);
-        }
+        const r2 = this.px*this.px + this.py*this.py;
+        const r = Math.sqrt(r2);
+        if (r < 0.6) return;
+        const k = 40.0;
+        const fScalar = (k * 4.0 * this.q2) / r2;
+        const ax = fScalar * (this.px / r);
+        const ay = fScalar * (this.py / r);
+        this.vx += ax * dt; this.vy += ay * dt;
+        this.px += this.vx * dt; this.py += this.vy * dt;
+        if (this.px < 20) this.trail.push({x: this.px, y: this.py});
     }
-    getExplanation() { return "固定された正電荷（原子核）に対する、荷電粒子の散乱シミュレーションです。q₂が正なら斥力で大きく反れ（ラザフォード散乱）、負なら引力で引き寄せられます。衝突径数 b が小さいほど散乱角は大きくなります。"; }
-    reset() {
-        super.reset();
-        if(this.particle) this.particle.material.color.setHex(this.q2 >= 0 ? 0xef4444 : 0x3b82f6);
-        this.pos.set(-15, this.b, 0);
-        this.vel.set(this.v0, 0, 0);
-        this.trailPoints = [];
-        if (this.trail) this.trail.geometry.setDrawRange(0, 0);
+    draw(ctx, engine) {
+        const cx = this.width / 2; const cy = this.height / 2;
+        const scale = 20;
+        ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5; ctx.beginPath();
+        this.trail.forEach((p, idx) => {
+            if(idx === 0) ctx.moveTo(cx + p.x * scale, cy - p.y * scale);
+            else ctx.lineTo(cx + p.x * scale, cy - p.y * scale);
+        });
+        ctx.stroke();
+        ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(cx, cy, 12, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 12px sans-serif'; ctx.fillText('+', cx-4, cy+4);
+        const bx = cx + this.px * scale; const by = cy - this.py * scale;
+        ctx.fillStyle = this.q2 > 0 ? '#f59e0b' : '#3b82f6';
+        ctx.beginPath(); ctx.arc(bx, by, 6, 0, Math.PI*2); ctx.fill();
+        engine.drawArrow(ctx, bx, by, bx + this.vx * scale * 0.3, by - this.vy * scale * 0.3, '#38bdf8', 2);
+        const r = Math.sqrt(this.px*this.px + this.py*this.py);
+        const k = 40.0; const fScalar = (k * 4.0 * this.q2) / (r*r);
+        const fx = fScalar * (this.px / r); const fy = fScalar * (this.py / r);
+        if(r < 10) engine.drawArrow(ctx, bx, by, bx + fx * scale * 0.3, by - fy * scale * 0.3, '#f43f5e', 2);
     }
+    getExplanation() { return "【見て学ぶポイント】\n電荷が正（黄）の時は斥力が働き、原子核（赤）に近づくにつれて凄まじい力（赤矢印）で軌道を曲げられます。上下のズレ b を小さくするほど近くを通るため、曲がり方が急になります。"; }
 }
 
 // ============================================================================
-// 5. エントリーポイント（アプリケーション起動）
+// 4. エントリーポイント（アプリケーション起動）
 // ============================================================================
 const physicsApp = new PhysicsEngine();
-
-// 作成した全5種のシミュレーションをエンジンに登録
 physicsApp.registerUnit('projectile', ProjectileUnit);
 physicsApp.registerUnit('shm', SHMUnit);
 physicsApp.registerUnit('lorentz', LorentzForceUnit);
 physicsApp.registerUnit('gravity', GravityOrbitUnit);
 physicsApp.registerUnit('coulomb', CoulombScatteringUnit);
-
 const uiController = new UIController();
-uiController.switchMode('flashcard'); // 起動時は暗記モードを開く
+uiController.switchMode('flashcard');
