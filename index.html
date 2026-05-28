@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>物理公式101選 ＆ 2D可視化シミュレーション</title>
+    <title>物理公式101選 ＆ 万能2D可視化シミュレーター</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>⚛️ 物理マスター: 公式暗記 ＆ 2D可視化シミュレーション</h1>
+        <h1>⚛️ 物理マスター: 101公式完全連動シミュレーション</h1>
         <div class="tabs">
             <button id="tab-flashcard" class="tab-btn active" onclick="uiController.switchMode('flashcard')">📝 公式暗記モード</button>
-            <button id="tab-sim" class="tab-btn" onclick="uiController.switchMode('sim')">🔬 2Dシミュレーション</button>
+            <button id="tab-sim" class="tab-btn" onclick="uiController.switchMode('sim')">🔬 万能2Dシミュレーション</button>
         </div>
     </header>
 
@@ -31,23 +31,23 @@
 
             <div id="view-sim" class="view-section" style="display: none;">
                 <div class="sim-header">
-                    <h2 id="unit-title">左のメニューから実験を選んでください</h2>
-                    <div class="linked-formula">連動公式: <span id="current-sim-formula">-</span></div>
+                    <h2 id="unit-title">左のメニューから、実験したい公式（No.1〜101）を選んでください</h2>
+                    <div class="linked-formula">連動数式: <span id="current-sim-formula">-</span></div>
                     <div class="vector-legend">
                         <span class="legend-item"><span class="color-box vel-box"></span> 速度ベクトル ($\vec{v}$)</span>
-                        <span class="legend-item"><span class="color-box force-box"></span> 力ベクトル ($\vec{F}$)</span>
+                        <span class="legend-item"><span class="color-box force-box"></span> 力・加速度ベクトル ($\vec{F}$ / $\vec{a}$)</span>
                     </div>
                 </div>
 
                 <div class="sim-body">
                     <div class="canvas-wrapper">
-                        <div id="canvas-placeholder">左メニューから実験を選択すると起動します</div>
+                        <div id="canvas-placeholder">左メニューから公式を選択すると、対応する物理エンジンが自動起動します</div>
                         <canvas id="physics-canvas"></canvas>
                     </div>
 
                     <div id="panel-container" class="control-panel" style="visibility: hidden;">
                         <div class="panel-section">
-                            <h3>⚙️ パラメーター設定</h3>
+                            <h3>⚙️ 公式から自動生成された変数</h3>
                             <div id="dynamic-controls"></div>
                         </div>
 
@@ -64,7 +64,7 @@
                         </div>
 
                         <div class="panel-section explanation-box">
-                            <h3>視覚的解説</h3>
+                            <h3>この公式の視覚的解説</h3>
                             <p id="explanation-text"></p>
                         </div>
                     </div>
